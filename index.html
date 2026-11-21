@@ -146,6 +146,98 @@ function renderTipList(tip, clean, list) {
   tip.innerHTML = '<div class="tip-title">' + clean + '</div><ol class="tip-list">' + liHtml + '</ol>';
 }
 
+function cleanWikiLine(line) {
+  var ob = String.fromCharCode(91, 91);
+  var cb = String.fromCharCode(93, 93);
+  var txt = line.replace(/^[#*:\s']+/, '').replace(/\{\{[^}]*\}\}/g, '');
+  while (txt.indexOf(ob) !== -1) {
+    var s = txt.indexOf(ob);
+    var e = txt.indexOf(cb, s);
+    if (e === -1) break;
+    var inner = txt.slice(s + 2, e);
+    var pipe = inner.indexOf('|');
+    var word = pipe !== -1 ? inner.slice(pipe + 1) : inner;
+    txt = txt.slice(0, s) + word + txt.slice(e + 2);
+  }
+  return txt.replace(/'''/g, '').replace(/''/g, '').trim();
+}
+
+function parseKoWikt(wt) {
+  var deIdx = wt.indexOf('독일어');
+  if (deIdx === -1) return [];
+  var sub = wt.slice(deIdx);
+  var nextLang = sub.indexOf('\n== ');
+  if (nextLang !== -1) sub = sub.slice(0, nextLang);
+
+  var lines = sub.split('\n');
+  var res = [];
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines.at(i).trim();
+    if (line.indexOf('# ') === 0) {
+      var cleaned = cleanWikiLine(line);
+      if (cleaned && cleaned.length > 1 && res.indexOf(cleaned) === -1) {
+        res.push(cleaned);
+      }
+    }
+    if (res.length >= 3) break;
+  }
+  return res;
+}
+
+function fetchKoWikt(word) {
+  var url = "https://wiktionary.org" + encodeURIComponent(word) + "&prop=wikitext&format=json&origin=*";
+  return fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+    if (data && data.parse && data.parse.wikitext) {
+      var wt = Object.values(data.parse.wikitext).at(0);
+      return parseKoWikt(String(wt || ''));
+    }
+    return [];
+  });
+}
+
+function fetchDeLemma(word) {
+  var url = "https://wiktionary.org" + encodeURIComponent(word) + "&prop=wikitext&format=json&origin=*";
+  return fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+    if (data && data.parse && data.parse.wikitext) {
+      var wt = String(Object.values(data.parse.wikitext).at(0) || '');
+      var m = wt.match(/\{\{Grundformverweis[^|}]*\|([^|}]+)/i);
+      if (m && m.at(1)) {
+        return m.at(1).split('#').at(0).trim();
+      }
+    }
+    return "";
+  });
+}
+
+function lookupWord(word) {
+  return fetchKoWikt(word).then(function(list) {
+    if (list.length > 0) return { title: word, list: list };
+    var lower = word.toLowerCase();
+    if (lower !== word) {
+      return fetchKoWikt(lower).then(function(list2) {
+        if (list2.length > 0) return { title: lower, list: list2 };
+        return null;
+      });
+    }
+    return null;
+  }).then(function(found) {
+    if (found) return found;
+    return fetchDeLemma(word).then(function(lemma) {
+      if (!lemma && word.toLowerCase() !== word) {
+        return fetchDeLemma(word.toLowerCase());
+      }
+      return lemma;
+    }).then(function(lemma) {
+      if (lemma) {
+        return fetchKoWikt(lemma).then(function(list3) {
+          return { title: word + " → " + lemma, list: list3 };
+        });
+      }
+      return { title: word, list: [] };
+    });
+  });
+}
+
 function showWordTip(el, rawWord) {
   var clean = rawWord.replace(/^[.,!?;:"'()]+|[.,!?;:"'()]+$/g, '');
   if (!clean) return;
@@ -154,7 +246,7 @@ function showWordTip(el, rawWord) {
   if (tipTimer) { clearTimeout(tipTimer); tipTimer = null; }
 
   var tip = document.getElementById('wTip');
-  tip.innerHTML = '<div class="tip-title">' + clean + '</div><div style="color:#cbd5e1; font-size:0.8rem;">뜻 찾는 중...</div>';
+  tip.innerHTML = '<div class="tip-title">' + clean + '</div><div style="color:#cbd5e1; font-size:0.8rem;">원형 및 뜻 찾는 중...</div>';
   tip.style.display = 'block';
 
   var rect = el.getBoundingClientRect();
@@ -164,28 +256,12 @@ function showWordTip(el, rawWord) {
   tip.style.top = topPos + 'px';
   tip.style.left = leftPos + 'px';
 
-  var url = "https://translated.net" + encodeURIComponent(clean) + "&langpair=de|ko";
-  fetch(url)
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      var list = [];
-      if (data && data.responseData && data.responseData.translatedText) {
-        var mainKo = String(data.responseData.translatedText).trim();
-        if (mainKo && /[가-힣]/.test(mainKo)) list.push(mainKo);
-      }
-      if (data && Array.isArray(data.matches)) {
-        data.matches.forEach(function(m) {
-          var tr = String(m.translation || '').trim();
-          if (tr && /[가-힣]/.test(tr) && tr.length <= 16 && list.indexOf(tr) === -1 && list.length < 3) {
-            list.push(tr);
-          }
-        });
-      }
-      renderTipList(tip, clean, list);
-    })
-    .catch(function() {
-      tip.innerHTML = '<div class="tip-title">' + clean + '</div><div style="color:#fca5a5;">잠시 후 다시 눌러주세요</div>';
-    });
+  lookupWord(clean).then(function(res) {
+    var msg = (res.list && res.list.length > 0) ? res.list : ["사전에 미등재된 단어입니다"];
+    renderTipList(tip, res.title, msg);
+  }).catch(function() {
+    tip.innerHTML = '<div class="tip-title">' + clean + '</div><div style="color:#fca5a5;">사전 연결 오류</div>';
+  });
 
   tipTimer = setTimeout(function() { hideTip(); }, 3500);
 }
