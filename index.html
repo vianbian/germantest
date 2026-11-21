@@ -154,7 +154,7 @@ function showWordTip(el, rawWord) {
   if (tipTimer) { clearTimeout(tipTimer); tipTimer = null; }
 
   var tip = document.getElementById('wTip');
-  tip.innerHTML = '<div class="tip-title">' + clean + '</div><div style="color:#cbd5e1; font-size:0.8rem;">사전 검색 중...</div>';
+  tip.innerHTML = '<div class="tip-title">' + clean + '</div><div style="color:#cbd5e1; font-size:0.8rem;">뜻 찾는 중...</div>';
   tip.style.display = 'block';
 
   var rect = el.getBoundingClientRect();
@@ -164,43 +164,32 @@ function showWordTip(el, rawWord) {
   tip.style.top = topPos + 'px';
   tip.style.left = leftPos + 'px';
 
-  var wUrl = "https://wiktionary.org" + encodeURIComponent(clean) + "&format=json&origin=*";
-  fetch(wUrl)
+  var url = "https://translated.net" + encodeURIComponent(clean) + "&langpair=de|ko";
+  fetch(url)
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      var pages = data && data.query && data.query.pages ? data.query.pages : {};
-      var keys = Object.keys(pages);
-      var ext = keys.length > 0 ? pages[keys.at(0)].extract : "";
-      if (ext && ext.trim()) {
-        var lines = ext.split('\n').map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 1 && /[가-힣]/.test(s); });
-        renderTipList(tip, clean, lines.length ? lines : [ext.slice(0, 60)]);
-      } else {
-        var lower = clean.toLowerCase();
-        if (lower !== clean) {
-          return fetch("https://wiktionary.org" + encodeURIComponent(lower) + "&format=json&origin=*")
-            .then(function(r2) { return r2.json(); })
-            .then(function(d2) {
-              var p2 = d2 && d2.query && d2.query.pages ? d2.query.pages : {};
-              var k2 = Object.keys(p2);
-              var e2 = k2.length > 0 ? p2[k2.at(0)].extract : "";
-              if (e2 && e2.trim()) {
-                var l2 = e2.split('\n').map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 1 && /[가-힣]/.test(s); });
-                renderTipList(tip, clean, l2.length ? l2 : [e2.slice(0, 60)]);
-              } else {
-                renderTipList(tip, clean, ["위키사전에 등재되지 않은 활용형입니다"]);
-              }
-            });
-        } else {
-          renderTipList(tip, clean, ["위키사전에 등재되지 않은 활용형입니다"]);
-        }
+      var list = [];
+      if (data && data.responseData && data.responseData.translatedText) {
+        var mainKo = String(data.responseData.translatedText).trim();
+        if (mainKo && /[가-힣]/.test(mainKo)) list.push(mainKo);
       }
+      if (data && Array.isArray(data.matches)) {
+        data.matches.forEach(function(m) {
+          var tr = String(m.translation || '').trim();
+          if (tr && /[가-힣]/.test(tr) && tr.length <= 16 && list.indexOf(tr) === -1 && list.length < 3) {
+            list.push(tr);
+          }
+        });
+      }
+      renderTipList(tip, clean, list);
     })
     .catch(function() {
-      tip.innerHTML = '<div class="tip-title">' + clean + '</div><div style="color:#fca5a5;">사전 연결 실패</div>';
+      tip.innerHTML = '<div class="tip-title">' + clean + '</div><div style="color:#fca5a5;">잠시 후 다시 눌러주세요</div>';
     });
 
-  tipTimer = setTimeout(function() { hideTip(); }, 4000);
+  tipTimer = setTimeout(function() { hideTip(); }, 3500);
 }
+
 
 
 function setLv(lv) {
