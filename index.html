@@ -163,7 +163,7 @@
     </div>
     <h3 style="color:#4f46e5; margin:10px 0 4px; font-size:1.25rem; font-weight:800;">Super! Weiter so!</h3>
     <p style="color:#64748b; margin:0 0 18px; font-weight:600; font-size:0.95rem;">"최고야! 이대로 계속 가자! 멍멍!"</p>
-    <button class="abtn" style="background:#f59e0b; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);" onclick="document.getElementById('dogM').style.display='none'">고마워 콩이야!</button>
+    <button class="abtn" style="background:#f59e0b; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);" onclick="document.getElementById('dogM').style.display='none'">고마워 치와와야!</button>
   </div>
 </div>
 <script>
@@ -173,8 +173,9 @@ var set = [
   {d:"Das macht wirklich Spaß!", k:"그거 진짜 재미있다!"}
 ];
 var thumbs = 0, qL = [], qi = 0, done = false, sharedSR = null, ttsTimer = null, isListening = false, curAud = null;
+window._utts = [];
+
 try { thumbs = parseInt(localStorage.getItem('g_th') || '0', 10); document.getElementById('tCnt').innerText = thumbs; } catch(e){}
-if (window.speechSynthesis) { try { speechSynthesis.getVoices(); } catch(e){} }
 
 function stopMic() {
   isListening = false;
@@ -197,13 +198,13 @@ function stopTts() {
   if (curAud) { try { curAud.pause(); curAud = null; } catch(e){} }
 }
 
-function playFallbackAudio(t, count) {
+function playOnlineMp3(t, count) {
   if (count >= 2) return;
-  var url = "https://google.com" + encodeURIComponent(t);
+  var url = "https://streamelements.com" + encodeURIComponent(t);
   curAud = new Audio(url);
   curAud.playbackRate = (count === 1) ? 0.72 : 1.0;
   curAud.onended = function() {
-    if (count + 1 < 2) ttsTimer = setTimeout(function() { playFallbackAudio(t, count + 1); }, 450);
+    if (count + 1 < 2) ttsTimer = setTimeout(function() { playOnlineMp3(t, count + 1); }, 450);
   };
   curAud.play().catch(function(){});
 }
@@ -211,28 +212,45 @@ function playFallbackAudio(t, count) {
 function tts(t) {
   stopMic();
   stopTts();
-  var voices = window.speechSynthesis ? speechSynthesis.getVoices() : [];
-  var hasDe = voices.some(function(v) { return v.lang && v.lang.toLowerCase().indexOf('de') !== -1; });
 
-  if (!window.speechSynthesis || (voices.length > 0 && !hasDe)) {
-    playFallbackAudio(t, 0);
+  if (!window.speechSynthesis) {
+    playOnlineMp3(t, 0);
     return;
   }
 
   var count = 0;
+  var started = false;
+
   function speakOnce() {
     if (count >= 2) return;
     var u = new SpeechSynthesisUtterance(t);
     u.lang = 'de-DE';
     u.rate = (count === 1) ? 0.68 : 1.0;
-    u.onerror = function() { playFallbackAudio(t, count); };
+    window._utts.push(u);
+
+    u.onstart = function() { started = true; };
+    u.onerror = function() { playOnlineMp3(t, count); };
     u.onend = function() {
       count++;
       if (count < 2) ttsTimer = setTimeout(speakOnce, 450);
     };
-    speechSynthesis.speak(u);
+
+    try {
+      speechSynthesis.resume();
+      speechSynthesis.speak(u);
+    } catch(e) {
+      playOnlineMp3(t, count);
+    }
   }
+
   speakOnce();
+
+  setTimeout(function() {
+    if (!started && count === 0) {
+      try { speechSynthesis.cancel(); } catch(e){}
+      playOnlineMp3(t, 0);
+    }
+  }, 600);
 }
 
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
