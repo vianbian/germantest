@@ -11,11 +11,16 @@
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f7f8fa; margin: 0 auto; padding: 18px 16px; color: #18181b; max-width: 460px; letter-spacing: -0.02em; }
   
-  .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
   .wbtn { background: #18181b; color: #fff; border: none; border-radius: 14px; padding: 10px 16px; font-size: 0.9rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(24, 24, 27, 0.12); transition: transform 0.15s ease; }
   .wbtn:active { transform: scale(0.96); }
   .badge { background: #fff; color: #d97706; padding: 8px 14px; border-radius: 20px; font-weight: 700; cursor: pointer; font-size: 0.88rem; border: 1px solid #fde68a; box-shadow: 0 2px 8px rgba(0,0,0,0.03); transition: transform 0.15s ease; }
   .badge:active { transform: scale(0.95); }
+
+  /* 괴테 레벨 선택 바 */
+  .lvbar { display: flex; gap: 6px; margin-bottom: 12px; }
+  .lvbtn { flex: 1; padding: 7px 0; border: 1.5px solid #e2e8f0; border-radius: 10px; background: #fff; color: #64748b; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.15s ease; }
+  .lvbtn.on { background: #eef2ff; border-color: #4f46e5; color: #4f46e5; }
 
   .bar { display: flex; background: #ebedf2; padding: 4px; border-radius: 14px; margin-bottom: 16px; gap: 4px; }
   .tab { flex: 1; padding: 10px; border: none; border-radius: 10px; font-size: 0.92rem; font-weight: 600; cursor: pointer; background: transparent; color: #64748b; transition: all 0.2s ease; }
@@ -23,7 +28,7 @@
 
   .card, .qbox { background: #fff; border-radius: 18px; padding: 16px 18px; margin-bottom: 12px; border: 1px solid #eef0f4; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03); }
   .row1 { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-  .de { font-size: 1.15rem; font-weight: 700; color: #1e1b4b; line-height: 1.4; }
+  .de { font-size: 1.12rem; font-weight: 700; color: #1e1b4b; line-height: 1.45; }
   .ibtn { background: #f4f5f8; border: none; border-radius: 11px; width: 38px; height: 38px; font-size: 1.05rem; cursor: pointer; margin-left: 6px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; transition: background 0.15s, transform 0.1s; }
   .ibtn:active { background: #e0e7ff; transform: scale(0.92); }
   
@@ -64,6 +69,13 @@
 <div class="top">
   <button class="wbtn" id="fBtn" onclick="getNew()">✨ 새 문장 3개 뽑기</button>
   <div class="badge" onclick="dog()">👍 <span id="tCnt">0</span> · 🐶3개마다</div>
+</div>
+
+<div class="lvbar">
+  <button class="lvbtn on" id="lvA1" onclick="setLv('A1')">A1 입문</button>
+  <button class="lvbtn" id="lvA2" onclick="setLv('A2')">A2 초급</button>
+  <button class="lvbtn" id="lvB1" onclick="setLv('B1')">B1 중급</button>
+  <button class="lvbtn" id="lvB2" onclick="setLv('B2')">B2 중상급</button>
 </div>
 
 <div class="bar">
@@ -143,10 +155,10 @@
     <h3 style="color:#4f46e5; margin:10px 0 4px; font-size:1.25rem; font-weight:800;">Super! Weiter so!</h3>
     <p style="color:#64748b; margin:0 0 16px; font-weight:600; font-size:0.95rem;">"최고야! 이대로 계속 가자! 멍멍!"</p>
     <button class="abtn" style="background:#f59e0b; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);" onclick="document.getElementById('dogM').style.display='none'">고마워 치와와야!</button>
-    <div style="margin-top:10px;"><button onclick="saveIcon()" style="background:none; border:none; color:#94a3b8; font-size:0.78rem; text-decoration:underline; cursor:pointer;">📥 홈 화면용 icon.png 저장</button></div>
   </div>
 </div>
 <script>
+var curLv = 'A1';
 var set = [
   {d:"Was machst du?", k:"너 뭐 해?"},
   {d:"Ich mache Kaffee.", k:"나 커피 만들고 있어."},
@@ -158,6 +170,15 @@ window._utts = [];
 
 try { thumbs = parseInt(localStorage.getItem('g_th') || '0', 10); document.getElementById('tCnt').innerText = thumbs; } catch(e){}
 if (window.speechSynthesis) { try { speechSynthesis.getVoices(); } catch(e){} }
+
+function setLv(lv) {
+  curLv = lv;
+  var lvs = ['A1', 'A2', 'B1', 'B2'];
+  for (var i = 0; i < lvs.length; i++) {
+    document.getElementById('lv' + lvs[i]).className = (lvs[i] === lv) ? 'lvbtn on' : 'lvbtn';
+  }
+  getNew();
+}
 
 function stopMic() {
   isListening = false;
@@ -240,50 +261,97 @@ function tts(t) {
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
 function makePair() {
-  var groups = [
-    function() {
-      var s = pick([{de:"Ich",ko:"나는",v:"trinke"},{de:"Wir",ko:"우리는",v:"trinken"},{de:"Sie",ko:"그녀는",v:"trinkt"},{de:"Er",ko:"그는",v:"trinkt"}]);
-      var o = pick([{de:"einen Kaffee",ko:"커피 한 잔을"},{de:"ein Glas Wasser",ko:"물 한 잔을"},{de:"einen Tee",ko:"차 한 잔을"},{de:"ein Bier",ko:"맥주 한 잔을"},{de:"Orangensaft",ko:"오렌지 주스를"}]);
-      return {d: s.de + " " + s.v + " " + o.de + ".", k: s.ko + " " + o.ko + " 마셔요."};
-    },
-    function() {
-      var s = pick([{de:"Ich",ko:"나는",v:"kaufe"},{de:"Wir",ko:"우리는",v:"kaufen"},{de:"Er",ko:"그는",v:"kauft"}]);
-      var o = pick([{de:"ein Brot",ko:"빵 하나를"},{de:"einen Apfel",ko:"사과 하나를"},{de:"eine Fahrkarte",ko:"승차권 한 장을"},{de:"ein Buch",ko:"책 한 권을"},{de:"Blumen",ko:"꽃을"},{de:"Schokolade",ko:"초콜릿을"}]);
-      return {d: s.de + " " + s.v + " " + o.de + ".", k: s.ko + " " + o.ko + " 사요."};
-    },
-    function() {
-      var p = pick([{de:"Wo ist",ko:"어디에 있나요?",ask:true},{de:"Ich suche",ko:"찾고 있어요.",ask:false},{de:"Wir gehen in",ko:"들어가요.",ask:false}]);
-      var pl = pick([
-        {nom:"der Bahnhof",acc:"den Bahnhof",ko:"기차역"},{nom:"die Toilette",acc:"die Toilette",ko:"화장실"},
-        {nom:"das Hotel",acc:"das Hotel",ko:"호텔"},{nom:"der Supermarkt",acc:"den Supermarkt",ko:"슈퍼마켓"},
-        {nom:"die Apotheke",acc:"die Apotheke",ko:"약국"},{nom:"das Restaurant",acc:"das Restaurant",ko:"식당"},
-        {nom:"die Bäckerei",acc:"die Bäckerei",ko:"빵집"}
-      ]);
-      if (p.ask) return {d: p.de + " " + pl.nom + "?", k: pl.ko + "이(가) " + p.ko};
-      return {d: p.de + " " + pl.acc + ".", k: pl.ko + "을(를) " + p.ko};
-    },
-    function() {
-      var s = pick([{de:"Das",ko:"그것은"},{de:"Es",ko:"그것은"},{de:"Das Wetter",ko:"날씨는"},{de:"Das Essen",ko:"음식은"},{de:"Der Kaffee",ko:"커피는"}]);
-      var adj = pick([{de:"wirklich gut!",ko:"정말 좋아요!"},{de:"sehr schön.",ko:"매우 아름다워요."},{de:"zu teuer.",ko:"너무 비싸요."},{de:"nicht schlecht.",ko:"나쁘지 않아요."},{de:"wirklich wichtig.",ko:"정말 중요해요."},{de:"sehr lecker!",ko:"아주 맛있어요!"}]);
-      return {d: s.de + " ist " + adj.de, k: s.ko + " " + adj.ko};
-    },
-    function() {
-      var s = pick([{de:"Ich fahre",ko:"나는"},{de:"Wir fahren",ko:"우리는"},{de:"Ich gehe",ko:"나는 걸어서"}]);
-      var dest = pick([{de:"nach Berlin",ko:"베를린으로"},{de:"nach München",ko:"뮌헨으로"},{de:"nach Hause",ko:"집으로"},{de:"ins Kino",ko:"영화관으로"},{de:"in die Stadt",ko:"시내로"},{de:"zur Arbeit",ko:"직장으로"},{de:"zum Flughafen",ko:"공항으로"}]);
-      return {d: s.de + " " + dest.de + ".", k: s.ko + " " + dest.ko + " 가요."};
-    },
+  if (curLv === 'A1') {
+    var a1 = [
+      function() {
+        var s = pick([{de:"Ich",ko:"나는",v:"trinke"},{de:"Wir",ko:"우리는",v:"trinken"},{de:"Er",ko:"그는",v:"trinkt"}]);
+        var o = pick([{de:"einen Kaffee",ko:"커피 한 잔을"},{de:"ein Glas Wasser",ko:"물 한 잔을"},{de:"einen Tee",ko:"차 한 잔을"},{de:"Orangensaft",ko:"오렌지 주스를"}]);
+        return {d: s.de + " " + s.v + " " + o.de + ".", k: s.ko + " " + o.ko + " 마셔요."};
+      },
+      function() {
+        var s = pick([{de:"Ich",ko:"나는",v:"kaufe"},{de:"Wir",ko:"우리는",v:"kaufen"},{de:"Er",ko:"그는",v:"kauft"}]);
+        var o = pick([{de:"ein Brot",ko:"빵 하나를"},{de:"einen Apfel",ko:"사과 하나를"},{de:"eine Fahrkarte",ko:"승차권 한 장을"},{de:"ein Buch",ko:"책 한 권을"}]);
+        return {d: s.de + " " + s.v + " " + o.de + ".", k: s.ko + " " + o.ko + " 사요."};
+      },
+      function() {
+        var pl = pick([{nom:"der Bahnhof",ko:"기차역"},{nom:"die Toilette",ko:"화장실"},{nom:"das Hotel",ko:"호텔"},{nom:"die Apotheke",ko:"약국"},{nom:"die Bäckerei",ko:"빵집"}]);
+        return {d: "Wo ist " + pl.nom + "?", k: pl.ko + "이(가) 어디에 있나요?"};
+      },
+      function() {
+        return pick([
+          {d:"Kannst du mir helfen?",k:"나 좀 도와줄 수 있어?"},{d:"Was kostet das zusammen?",k:"전부 다 해서 얼마인가요?"},
+          {d:"Kann ich mit Karte zahlen?",k:"카드로 계산할 수 있나요?"},{d:"Wie spät ist es jetzt?",k:"지금 몇 시인가요?"},
+          {d:"Ich möchte gern bestellen.",k:"주문하고 싶어요."},{d:"Die Rechnung, bitte.",k:"계산서 주세요."},
+          {d:"Ich verstehe das nicht.",k:"그게 이해가 안 돼요."},{d:"Ich bin heute sehr müde.",k:"나 오늘 너무 피곤해."}
+        ]);
+      }
+    ];
+    return pick(a1)();
+  }
+
+  if (curLv === 'A2') {
+    var a2 = [
+      function() {
+        var act = pick([
+          {de:"ein neues Buch gekauft",ko:"새 책을 샀어요"},{de:"meine Freunde getroffen",ko:"친구들을 만났어요"},
+          {de:"den ganzen Tag gearbeitet",ko:"하루 종일 일했어요"},{de:"eine leckere Suppe gekocht",ko:"맛있는 수프를 끓였어요"},
+          {de:"lange geschlafen",ko:"오래 잤어요"},{de:"Deutsch gelernt",ko:"독일어를 공부했어요"}
+        ]);
+        return {d: "Gestern habe ich " + act.de + ".", k: "어제 저는 " + act.ko + "."};
+      },
+      function() {
+        var main = pick([{de:"Ich bleibe heute zu Hause",ko:"나는 오늘 집에 머물러요"},{de:"Ich lerne jeden Tag Deutsch",ko:"나는 매일 독일어를 공부해요"},{de:"Wir nehmen heute den Bus",ko:"우리는 오늘 버스를 타요"}]);
+        var reason = pick([{de:"weil es draußen stark regnet.",ko:"밖에 비가 많이 오기 때문에"},{de:"weil ich bald nach Deutschland fahre.",ko:"곧 독일에 가기 때문에"},{de:"weil mein Auto kaputt ist.",ko:"내 차가 고장 났기 때문에"}]);
+        return {d: main.de + ", " + reason.de, k: reason.ko + " " + main.ko + "."};
+      },
+      function() {
+        return pick([
+          {d:"Könnten Sie mir bitte den Weg erklären?",k:"제게 길을 좀 설명해 주실 수 있나요?"},
+          {d:"Ich muss morgen früh zum Arzt gehen.",k:"나는 내일 일찍 병원에 가야 해요."},
+          {d:"Am Wochenende möchte ich gern wandern gehen.",k:"주말에 등산하러 가고 싶어요."},
+          {d:"Es tut mir leid, dass ich zu spät komme.",k:"늦어서 정말 죄송합니다."},
+          {d:"Darf ich hier mein Fahrrad abstellen?",k:"여기에 제 자전거를 세워도 되나요?"},
+          {d:"Ich interessiere mich sehr für deutsche Kultur.",k:"저는 독일 문화에 관심이 아주 많아요."}
+        ]);
+      }
+    ];
+    return pick(a2)();
+  }
+
+  if (curLv === 'B1') {
+    var b1 = [
+      function() {
+        return pick([
+          {d:"Wenn ich mehr Zeit hätte, würde ich öfter reisen.",k:"시간이 더 있다면 여행을 더 자주 갈 텐데요."},
+          {d:"Könnten Sie mir sagen, wann der nächste Zug abfährt?",k:"다음 기차가 언제 출발하는지 말씀해 주시겠어요?"},
+          {d:"Obwohl das Wetter schlecht war, hatten wir viel Spaß.",k:"날씨가 안 좋았음에도 불구하고 우리는 아주 즐거웠어요."},
+          {d:"Ich freue mich darauf, dich bald wiederzusehen.",k:"곧 너를 다시 만나게 될 것을 기대하고 있어."},
+          {d:"Es ist wichtig, dass man regelmäßig Sport treibt.",k:"규칙적으로 운동을 하는 것이 중요합니다."},
+          {d:"Der Film, den wir gestern gesehen haben, war wirklich spannend.",k:"우리가 어제 본 그 영화는 정말 흥미진진했어요."},
+          {d:"Anstatt fernzusehen, lese ich lieber ein gutes Buch.",k:"TV를 보는 대신에 차라리 좋은 책을 읽는 편이 나아요."},
+          {d:"Ich habe mich dazu entschlossen, einen Sprachkurs zu besuchen.",k:"저는 어학 코스를 수강하기로 결심했습니다."}
+        ]);
+      }
+    ];
+    return pick(b1)();
+  }
+
+  // B2 (중상급)
+  var b2 = [
     function() {
       return pick([
-        {d:"Kannst du mir helfen?",k:"나 좀 도와줄 수 있어?"},{d:"Können Sie bitte langsamer sprechen?",k:"조금만 천천히 말씀해 주시겠어요?"},
-        {d:"Was kostet das zusammen?",k:"전부 다 해서 얼마인가요?"},{d:"Kann ich mit Karte zahlen?",k:"카드로 계산할 수 있나요?"},
-        {d:"Hast du heute Abend Zeit?",k:"오늘 저녁에 시간 있어?"},{d:"Ich habe leider keine Zeit.",k:"아쉽게도 시간이 없어요."},
-        {d:"Ich bin wirklich müde.",k:"나 진짜 피곤해."},{d:"Das macht wirklich Spaß!",k:"그거 진짜 재미있다!"},
-        {d:"Ich verstehe das nicht.",k:"그게 이해가 안 돼요."},{d:"Wie spät ist es jetzt?",k:"지금 몇 시인가요?"},
-        {d:"Ich möchte gern bestellen.",k:"주문하고 싶어요."},{d:"Die Rechnung, bitte.",k:"계산서 주세요."}
+        {d:"Je mehr man sich mit der Sprache beschäftigt, desto leichter fällt sie einem.",k:"언어를 더 많이 접할수록, 그 언어가 점점 더 쉬워집니다."},
+        {d:"Angesichts der aktuellen Lage müssen wir eine schnelle Lösung finden.",k:"현재 상황을 고려할 때 우리는 신속한 해결책을 찾아야 합니다."},
+        {d:"Es lässt sich nicht leugnen, dass die Digitalisierung unseren Alltag verändert hat.",k:"디지털화가 우리의 일상을 변화시켰다는 사실은 부인할 수 없습니다."},
+        {d:"Meiner Ansicht nach sollten erneuerbare Energien stärker gefördert werden.",k:"제 견해로는 재생 에너지가 더욱 적극적으로 장려되어야 합니다."},
+        {d:"Trotz aller Schwierigkeiten ist es uns gelungen, das Projekt rechtzeitig abzuschließen.",k:"모든 어려움에도 불구하고 우리는 프로젝트를 제때 마무리하는 데 성공했습니다."},
+        {d:"Es kommt darauf an, wie man mit unerwarteten Problemen umgeht.",k:"예상치 못한 문제들에 어떻게 대처하느냐에 달려 있습니다."},
+        {d:"Sowohl im Berufsleben als auch im Privatleben spielt Kommunikation eine entscheidende Rolle.",k:"직장 생활뿐만 아니라 사생활에서도 의사소통은 결정적인 역할을 합니다."},
+        {d:"Hätte ich das früher gewusst, hätte ich mich ganz anders entschieden.",k:"내가 그걸 더 일찍 알았더라면, 완전히 다른 결정을 내렸을 텐데요."}
       ]);
     }
   ];
-  return pick(groups)();
+  return pick(b2)();
 }
 function toggleKo(i) {
   var el = document.getElementById('ko' + i);
@@ -362,21 +430,6 @@ function dog() {
   playCuteSound();
 }
 
-function saveIcon() {
-  var svgStr = '<svg xmlns="http://w3.org" width="512" height="512" viewBox="75 60 230 230"><rect x="75" y="60" width="230" height="230" rx="52" fill="#fef3c7"/><g stroke="#4e2a14" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"><path d="M 158 152 C 138 106, 102 88, 90 100 C 78 112, 94 164, 134 188 Z" fill="#dca878"/><path d="M 151 158 C 134 120, 108 104, 99 112 C 91 120, 104 156, 132 178 Z" fill="#f7b2ad" stroke="none"/><path d="M 222 152 C 242 106, 278 88, 290 100 C 302 112, 286 164, 246 188 Z" fill="#dca878"/><path d="M 229 158 C 246 120, 272 104, 281 112 C 289 120, 276 156, 248 178 Z" fill="#f7b2ad" stroke="none"/><path d="M 136 166 C 136 120, 244 120, 244 166 L 253 174 L 244 182 L 251 189 L 243 196 C 240 240, 140 240, 137 196 L 129 189 L 136 182 L 127 174 Z" fill="#dca878"/><path d="M 190 192 C 183 192, 177 196, 174 201 C 164 203, 158 211, 161 220 C 164 228, 179 231, 190 231 C 201 231, 216 228, 219 220 C 222 211, 216 203, 206 201 C 203 196, 197 192, 190 192 Z" fill="#fbf0e4" stroke="none"/><path d="M 136 166 C 136 120, 244 120, 244 166 L 253 174 L 244 182 L 251 189 L 243 196 C 240 240, 140 240, 137 196 L 129 189 L 136 182 L 127 174 Z" fill="none"/><ellipse cx="166" cy="175" rx="8.5" ry="5" transform="rotate(-12 166 175)" fill="#fbf0e4" stroke="none"/><ellipse cx="214" cy="175" rx="8.5" ry="5" transform="rotate(12 214 175)" fill="#fbf0e4" stroke="none"/><circle cx="155" cy="197" r="11" fill="#4e2a14" stroke="none"/><circle cx="151.5" cy="193.5" r="3.8" fill="#ffffff" stroke="none"/><circle cx="225" cy="197" r="11" fill="#4e2a14" stroke="none"/><circle cx="221.5" cy="193.5" r="3.8" fill="#ffffff" stroke="none"/><path d="M 181 204 C 181 198, 199 198, 199 204 C 199 210, 192 213, 190 213 C 188 213, 181 210, 181 204 Z" fill="#4e2a14" stroke="none"/><path d="M 175 217 C 178 224, 188 224, 190 217 C 192 224, 202 224, 205 217" fill="none" stroke="#4e2a14" stroke-width="5.5"/><line x1="190" y1="211" x2="190" y2="218" stroke="#4e2a14" stroke-width="5"/></g></svg>';
-  var img = new Image();
-  img.onload = function() {
-    var c = document.createElement('canvas');
-    c.width = 512; c.height = 512;
-    c.getContext('2d').drawImage(img, 0, 0, 512, 512);
-    var a = document.createElement('a');
-    a.download = 'icon.png';
-    a.href = c.toDataURL('image/png');
-    a.click();
-  };
-  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
-}
-
 function getSR() {
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) return null;
@@ -424,7 +477,7 @@ function showQ() {
   var inp = document.getElementById('inp');
   inp.value = '';
   inp.disabled = false;
-  document.getElementById('qStep').innerText = '문제 ' + (qi + 1) + ' / 3';
+  document.getElementById('qStep').innerText = '[' + curLv + '] 문제 ' + (qi + 1) + ' / 3';
   document.getElementById('qTxt').innerText = '🇰🇷 "' + qL[qi].k + '"';
 }
 
@@ -470,7 +523,7 @@ function chk() {
     qi++;
     if (qi < 3) { showQ(); }
     else {
-      document.getElementById('qTxt').innerText = '🎉 테스트 완료!';
+      document.getElementById('qTxt').innerText = '🎉 [' + curLv + '] 테스트 완료!';
       document.getElementById('inp').style.display = 'none';
       document.getElementById('qMic').style.display = 'none';
       document.querySelector('.ubar').style.display = 'none';
