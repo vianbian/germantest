@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>매일 3문장 독일어 + 치와와 응원단</title>
 <link rel="icon" type="image/png" sizes="512x512" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
@@ -11,8 +10,9 @@
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f7f8fa; margin: 0 auto; padding: 18px 16px; color: #18181b; max-width: 460px; letter-spacing: -0.02em; }
   .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-  .wbtn { background: #18181b; color: #fff; border: none; border-radius: 14px; padding: 10px 16px; font-size: 0.9rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(24, 24, 27, 0.12); }
-  .badge { background: #fff; color: #d97706; padding: 8px 14px; border-radius: 20px; font-weight: 700; cursor: pointer; font-size: 0.88rem; border: 1px solid #fde68a; }
+  .wbtn { background: #18181b; color: #fff; border: none; border-radius: 14px; padding: 10px 16px; font-size: 0.9rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(24, 24, 27, 0.12); transition: transform 0.15s ease; }
+  .wbtn:active { transform: scale(0.96); }
+  .badge { background: #fff; color: #d97706; padding: 8px 14px; border-radius: 20px; font-weight: 700; cursor: pointer; font-size: 0.88rem; border: 1px solid #fde68a; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
   .lvbar { display: flex; gap: 6px; margin-bottom: 12px; }
   .lvbtn { flex: 1; padding: 7px 0; border: 1.5px solid #e2e8f0; border-radius: 10px; background: #fff; color: #64748b; font-size: 0.82rem; font-weight: 700; cursor: pointer; }
   .lvbtn.on { background: #eef2ff; border-color: #4f46e5; color: #4f46e5; }
@@ -22,11 +22,12 @@
   .card, .qbox { background: #fff; border-radius: 18px; padding: 16px 18px; margin-bottom: 12px; border: 1px solid #eef0f4; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03); }
   .row1 { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
   .de { font-size: 1.12rem; font-weight: 700; color: #1e1b4b; line-height: 1.55; }
-  .dw { cursor: pointer; border-radius: 5px; padding: 1px 2px; }
+  .dw { cursor: pointer; border-radius: 5px; padding: 1px 2px; transition: background 0.15s, color 0.15s; }
   .dw:active, .dw.sel { background: #e0e7ff; color: #4f46e5; }
-  .tip { display: none; position: fixed; z-index: 120; background: #1e1b4b; color: #fff; padding: 10px 14px; border-radius: 12px; font-size: 0.86rem; box-shadow: 0 8px 20px rgba(30, 27, 75, 0.25); max-width: 230px; pointer-events: none; }
-  .tip-title { font-weight: 800; color: #a5b4fc; font-size: 0.92rem; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.12); padding-bottom: 3px; }
-  .tip-list { margin: 0; padding-left: 16px; line-height: 1.45; color: #f8fafc; font-weight: 500; }
+  .tip { display: none; position: fixed; z-index: 120; background: #1e1b4b; color: #fff; padding: 11px 14px; border-radius: 13px; font-size: 0.86rem; box-shadow: 0 10px 25px rgba(30, 27, 75, 0.28); max-width: 240px; pointer-events: auto; animation: tipPop 0.15s ease-out; }
+  .tip-title { font-weight: 800; color: #a5b4fc; font-size: 0.92rem; margin-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.14); padding-bottom: 4px; }
+  .tip-list { margin: 0; padding-left: 16px; line-height: 1.48; color: #f8fafc; font-weight: 500; }
+  @keyframes tipPop { from { opacity: 0; transform: translateY(4px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
   .ibtn { background: #f4f5f8; border: none; border-radius: 11px; width: 38px; height: 38px; font-size: 1.05rem; cursor: pointer; margin-left: 6px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
   .row2 { display: flex; justify-content: flex-end; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 1px solid #f1f5f9; gap: 8px; }
   .ko { font-weight: 600; cursor: pointer; padding: 4px 10px; border-radius: 8px; text-align: right; font-size: 0.95rem; color: #334155; }
@@ -47,7 +48,7 @@
 </style>
 </head>
 <body onclick="hideTip(event)">
-<div id="wTip" class="tip"></div>
+<div id="wTip" class="tip" onclick="event.stopPropagation()"></div>
 <div class="top">
   <button class="wbtn" id="fBtn" onclick="getNew()">✨ 새 문장 3개 뽑기</button>
   <div class="badge" onclick="dog()">👍 <span id="tCnt">0</span> · 🐶3개마다</div>
@@ -119,15 +120,15 @@
 <script>
 var curLv = 'A1';
 var allData = null;
-var seenMap = { A1: [], A2: [], B1: [], B2: [] };
+var seenMap = { A1: new Array(), A2: new Array(), B1: new Array(), B2: new Array() };
 var set = [
   {d:"Was machst du?", k:"너 뭐 해?", tid:"init_1"},
   {d:"Ich mache Kaffee.", k:"나 커피 만들고 있어.", tid:"init_2"},
   {d:"Das macht wirklich Spaß!", k:"그거 진짜 재미있다!", tid:"init_3"}
 ];
-var thumbs = 0, qL = [], qi = 0, done = false, sharedSR = null, ttsTimer = null, isListening = false, tipTimer = null;
+var thumbs = 0, qL = new Array(), qi = 0, done = false, sharedSR = null, ttsTimer = null, isListening = false, tipTimer = null;
 var curAud = new Audio();
-window._utts = [];
+window._utts = new Array();
 
 try { thumbs = parseInt(localStorage.getItem('g_th') || '0', 10); document.getElementById('tCnt').innerText = thumbs; } catch(e){}
 if (window.speechSynthesis) { try { speechSynthesis.getVoices(); } catch(e){} }
@@ -137,11 +138,10 @@ function hideTip(e) {
   var tip = document.getElementById('wTip');
   if (tip) tip.style.display = 'none';
   var sels = document.querySelectorAll('.dw.sel');
-  for (var i = 0; i < sels.length; i++) sels[i].classList.remove('sel');
+  for (var i = 0; i < sels.length; i++) sels.item(i).classList.remove('sel');
 }
 
 function renderTipList(tip, clean, list) {
-  if (!list || list.length === 0) list = ["뜻을 찾지 못했습니다"];
   var liHtml = list.slice(0, 3).map(function(txt) { return '<li>' + txt + '</li>'; }).join('');
   tip.innerHTML = '<div class="tip-title">' + clean + '</div><ol class="tip-list">' + liHtml + '</ol>';
 }
@@ -184,66 +184,36 @@ function parseKoWikt(wt) {
   return res;
 }
 
-function fetchFastJson(url, ms) {
-  return new Promise(function(resolve, reject) {
-    var timer = setTimeout(function() { reject(new Error("timeout")); }, ms);
-    fetch(url).then(function(r) {
-      clearTimeout(timer);
-      if (!r.ok) reject(new Error("http"));
-      else resolve(r.json());
-    }).catch(function(e) {
-      clearTimeout(timer);
-      reject(e);
-    });
-  });
+function fetchWiktJson(url) {
+  return fetch(url, {
+    headers: { "Api-User-Agent": "GermanStudyApp/1.0 (https://github.com)" }
+  }).then(function(r) {
+    if (!r.ok) return null;
+    return r.json();
+  }).catch(function() { return null; });
 }
 
 function fetchKoWikt(word) {
   var url = "https://wiktionary.org" + encodeURIComponent(word) + "&prop=wikitext&format=json&origin=*";
-  return fetchFastJson(url, 2200).then(function(data) {
+  return fetchWiktJson(url).then(function(data) {
     if (data && data.parse && data.parse.wikitext) {
       var wt = Object.values(data.parse.wikitext).at(0);
       return parseKoWikt(String(wt || ''));
     }
     return new Array();
-  }).catch(function() { return new Array(); });
+  });
 }
 
 function fetchDeLemma(word) {
   var url = "https://wiktionary.org" + encodeURIComponent(word) + "&prop=wikitext&format=json&origin=*";
-  return fetchFastJson(url, 2200).then(function(data) {
+  return fetchWiktJson(url).then(function(data) {
     if (data && data.parse && data.parse.wikitext) {
       var wt = String(Object.values(data.parse.wikitext).at(0) || '');
       var m = wt.match(/\{\{(?:Grundformverweis|Lemmaverweis)[^|}]*\|([^|}]+)/i);
-      if (m && m.at(1)) {
-        return m.at(1).split('#').at(0).trim();
-      }
+      if (m && m.at(1)) return m.at(1).split('#').at(0).trim();
     }
     return "";
-  }).catch(function() { return ""; });
-}
-
-function fetchFallbackKo(word) {
-  var url = "https://translated.net" + encodeURIComponent(word) + "&langpair=de|ko";
-  return fetchFastJson(url, 2500)
-    .then(function(data) {
-      var list = new Array();
-      if (data && data.responseData && data.responseData.translatedText) {
-        var mainT = String(data.responseData.translatedText).trim();
-        if (mainT && /[가-힣]/.test(mainT)) list.push(mainT);
-      }
-      if (data && Array.isArray(data.matches)) {
-        for (var i = 0; i < data.matches.length; i++) {
-          var item = data.matches.at(i);
-          var tr = item ? String(item.translation || '').trim() : '';
-          if (tr && /[가-힣]/.test(tr) && tr.length <= 16 && list.indexOf(tr) === -1 && list.length < 3) {
-            list.push(tr);
-          }
-        }
-      }
-      return list;
-    })
-    .catch(function() { return new Array(); });
+  });
 }
 
 function lookupWord(word) {
@@ -252,24 +222,32 @@ function lookupWord(word) {
     fetchKoWikt(word),
     lower !== word ? fetchKoWikt(lower) : Promise.resolve(new Array()),
     fetchDeLemma(word),
-    fetchFallbackKo(word)
+    lower !== word ? fetchDeLemma(lower) : Promise.resolve("")
   ]).then(function(res) {
     var ko1 = res.at(0);
     var ko2 = res.at(1);
-    var lemma = res.at(2);
-    var fb = res.at(3);
-    var titleText = lemma ? (word + " → " + lemma) : word;
+    var lemma = res.at(2) || res.at(3);
+    var titleText = (lemma && lemma !== word) ? (word + " → " + lemma) : word;
 
-    if (ko1.length > 0) return { title: titleText, list: ko1 };
-    if (ko2.length > 0) return { title: titleText, list: ko2 };
-    if (fb.length > 0) return { title: titleText, list: fb };
+    if (ko1.length > 0) return { title: titleText, list: ko1, target: lemma || word };
+    if (ko2.length > 0) return { title: titleText, list: ko2, target: lemma || lower };
     if (lemma) {
-      return fetchFallbackKo(lemma).then(function(fb2) {
-        return { title: titleText, list: fb2 };
+      return fetchKoWikt(lemma).then(function(ko3) {
+        return { title: titleText, list: ko3, target: lemma };
       });
     }
-    return { title: word, list: new Array() };
+    return { title: word, list: new Array(), target: word };
   });
+}
+
+function positionTip(tip, rect) {
+  var tipW = tip.offsetWidth || 210;
+  var tipH = tip.offsetHeight || 76;
+  var topPos = rect.top - tipH - 8;
+  if (topPos < 10) topPos = rect.bottom + 8;
+  var leftPos = Math.max(12, Math.min(window.innerWidth - tipW - 12, rect.left));
+  tip.style.top = topPos + 'px';
+  tip.style.left = leftPos + 'px';
 }
 
 function showWordTip(el, rawWord) {
@@ -280,32 +258,31 @@ function showWordTip(el, rawWord) {
   if (tipTimer) { clearTimeout(tipTimer); tipTimer = null; }
 
   var tip = document.getElementById('wTip');
-  tip.innerHTML = '<div class="tip-title">' + clean + '</div><div style="color:#cbd5e1; font-size:0.8rem;">원형 및 뜻 찾는 중...</div>';
+  tip.innerHTML = '<div class="tip-title">' + clean + '</div><div style="color:#cbd5e1; font-size:0.8rem;">사전 검색 중...</div>';
   tip.style.display = 'block';
 
   var rect = el.getBoundingClientRect();
-  var topPos = rect.top - 78;
-  if (topPos < 10) topPos = rect.bottom + 8;
-  var leftPos = Math.max(12, Math.min(window.innerWidth - 242, rect.left));
-  tip.style.top = topPos + 'px';
-  tip.style.left = leftPos + 'px';
+  positionTip(tip, rect);
 
   lookupWord(clean).then(function(res) {
-    var msg = (res.list && res.list.length > 0) ? res.list : Array.of("뜻을 찾지 못했습니다");
-    renderTipList(tip, res.title, msg);
-  }).catch(function() {
-    tip.innerHTML = '<div class="tip-title">' + clean + '</div><div style="color:#fca5a5;">잠시 후 다시 눌러주세요</div>';
+    if (res.list && res.list.length > 0) {
+      renderTipList(tip, res.title, res.list);
+    } else {
+      var gLink = "https://google.com" + encodeURIComponent(res.target) + "&op=translate";
+      tip.innerHTML = '<div class="tip-title">' + res.title + '</div>' +
+        '<div style="font-size:0.8rem; color:#cbd5e1; margin-bottom:6px;">위키사전 미등재 단어</div>' +
+        '<a href="' + gLink + '" target="_blank" style="display:inline-block; background:#4f46e5; color:#fff; text-decoration:none; padding:5px 10px; border-radius:7px; font-size:0.8rem; font-weight:700;">🔍 구글 번역에서 바로 보기</a>';
+    }
+    positionTip(tip, rect);
   });
 
-  tipTimer = setTimeout(function() { hideTip(); }, 3500);
+  tipTimer = setTimeout(function() { hideTip(); }, 5000);
 }
-
-
 function setLv(lv) {
   curLv = lv;
   var lvs = ['A1', 'A2', 'B1', 'B2'];
   for (var i = 0; i < lvs.length; i++) {
-    document.getElementById('lv' + lvs[i]).className = (lvs[i] === lv) ? 'lvbtn on' : 'lvbtn';
+    document.getElementById('lv' + lvs.at(i)).className = (lvs.at(i) === lv) ? 'lvbtn on' : 'lvbtn';
   }
   getNew();
 }
@@ -350,7 +327,8 @@ function tts(t) {
   var voices = speechSynthesis.getVoices();
   var deVoice = null;
   for (var i = 0; i < voices.length; i++) {
-    if (voices[i].lang && voices[i].lang.toLowerCase().indexOf('de') !== -1) { deVoice = voices[i]; break; }
+    var v = voices.at(i);
+    if (v && v.lang && v.lang.toLowerCase().indexOf('de') !== -1) { deVoice = v; break; }
   }
   var count = 0;
   function speakOnce() {
@@ -369,21 +347,22 @@ function tts(t) {
 }
 
 function pickFromPool(pool) {
-  var seen = seenMap[curLv];
+  var seen = Reflect.get(seenMap, curLv);
   var avail = pool.filter(function(item) { return seen.indexOf(item.d) === -1; });
   if (avail.length < 3) {
     var prevTexts = set.map(function(s) { return s.d; });
-    seenMap[curLv] = prevTexts.slice();
+    Reflect.set(seenMap, curLv, prevTexts.slice());
     avail = pool.filter(function(item) { return prevTexts.indexOf(item.d) === -1; });
   }
   var shuffled = avail.slice().sort(function() { return Math.random() - 0.5; });
-  var res = [], usedTids = [];
+  var res = new Array(), usedTids = new Array();
   for (var i = 0; i < shuffled.length; i++) {
     if (res.length >= 3) break;
-    if (usedTids.indexOf(shuffled[i].tid) === -1) {
-      usedTids.push(shuffled[i].tid);
-      res.push(shuffled[i]);
-      seenMap[curLv].push(shuffled[i].d);
+    var cand = shuffled.at(i);
+    if (usedTids.indexOf(cand.tid) === -1) {
+      usedTids.push(cand.tid);
+      res.push(cand);
+      Reflect.get(seenMap, curLv).push(cand.d);
     }
   }
   set = res;
@@ -391,10 +370,15 @@ function pickFromPool(pool) {
 }
 
 function getNew() {
-  if (allData && allData[curLv]) { pickFromPool(allData[curLv]); return; }
+  var lvPool = allData ? Reflect.get(allData, curLv) : null;
+  if (lvPool) { pickFromPool(lvPool); return; }
   fetch('sentences.json?v=' + Date.now())
     .then(function(r) { return r.json(); })
-    .then(function(json) { allData = json; if (allData[curLv]) pickFromPool(allData[curLv]); })
+    .then(function(json) {
+      allData = json;
+      var loaded = Reflect.get(allData, curLv);
+      if (loaded) pickFromPool(loaded);
+    })
     .catch(function() { draw(); });
 }
 function wrapWords(sentence) {
@@ -415,9 +399,9 @@ function draw() {
   hideTip(); stopTts(); stopMic();
   var html = "";
   for (var i = 0; i < set.length; i++) {
-    var x = set[i];
+    var x = set.at(i);
     html += '<div class="card">' +
-      '<div class="row1"><span class="de">' + wrapWords(x.d) + '</span><div style="display:flex;"><button class="ibtn" onclick="tts(set[' + i + '].d)">🔊</button><button class="ibtn" onclick="mic(' + i + ')">🎙️</button></div></div>' +
+      '<div class="row1"><span class="de">' + wrapWords(x.d) + '</span><div style="display:flex;"><button class="ibtn" onclick="tts(set.at(' + i + ').d)">🔊</button><button class="ibtn" onclick="mic(' + i + ')">🎙️</button></div></div>' +
       '<div class="row2"><span class="ko hide" id="ko' + i + '" onclick="toggleKo(' + i + ')">' + x.k + '</span><button class="minibtn" id="eye' + i + '" onclick="toggleKo(' + i + ')">▾</button></div>' +
       '<div id="fb' + i + '" style="font-size:0.84rem; margin-top:6px; font-weight:600;"></div>' +
     '</div>';
@@ -448,7 +432,7 @@ function playCuteSound() {
     for (var i = 0; i < notes.length; i++) {
       var osc = ctx.createOscillator(), gain = ctx.createGain();
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(notes[i], now + i * 0.07);
+      osc.frequency.setValueAtTime(notes.at(i), now + i * 0.07);
       gain.gain.setValueAtTime(0.08, now + i * 0.07);
       gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.07 + 0.18);
       osc.connect(gain); gain.connect(ctx.destination);
@@ -480,12 +464,13 @@ function mic(i) {
   r.onresult = function(e) {
     if (!isListening) return; isListening = false;
     var s = e.results.item(0).item(0).transcript;
-    if (norm(s) === norm(set[i].d)) { fb.style.color='#10b981'; fb.innerText='👍 정답! ("'+s+'") +1 따봉!'; plus(); }
+    if (norm(s) === norm(set.at(i).d)) { fb.style.color='#10b981'; fb.innerText='👍 정답! ("'+s+'") +1 따봉!'; plus(); }
     else { fb.style.color='#d97706'; fb.innerText='💬 인식됨: "'+s+'" (다시 시도해보세요)'; }
   };
   r.onerror = function(e) { if (!isListening) return; isListening = false; fb.style.color='#ef4444'; fb.innerText='⚠️ 오류: '+e.error; };
   setTimeout(function(){ if(isListening) { try { r.start(); } catch(e){} } }, 120);
 }
+
 function initQ() {
   qL = set.slice().sort(function(){ return Math.random()-0.5; }); qi = 0;
   document.getElementById('inp').style.display='block';
@@ -501,7 +486,7 @@ function showQ() {
   document.getElementById('cBtn').style.background = '#10b981';
   var inp = document.getElementById('inp'); inp.value = ''; inp.disabled = false;
   document.getElementById('qStep').innerText = '[' + curLv + '] 문제 ' + (qi + 1) + ' / 3';
-  document.getElementById('qTxt').innerText = '🇰🇷 "' + qL[qi].k + '"';
+  document.getElementById('qTxt').innerText = '🇰🇷 "' + qL.at(qi).k + '"';
 }
 
 function ins(c) { var inp=document.getElementById('inp'); if(!inp.disabled){inp.value+=c; inp.focus();} }
@@ -549,11 +534,11 @@ function chk() {
   var inp = document.getElementById('inp');
   if (!inp.value.trim()) return;
   var m = document.getElementById('rMsg');
-  if (norm(inp.value) === norm(qL[qi].d)) {
-    m.style.color = '#10b981'; m.innerHTML = '⭕ 정답입니다! (' + qL[qi].d + ')'; plus();
+  if (norm(inp.value) === norm(qL.at(qi).d)) {
+    m.style.color = '#10b981'; m.innerHTML = '⭕ 정답입니다! (' + qL.at(qi).d + ')'; plus();
   } else {
     m.style.color = '#ef4444';
-    m.innerHTML = '❌ 틀렸습니다! 정답: <b>' + qL[qi].d + '</b><br>' +
+    m.innerHTML = '❌ 틀렸습니다! 정답: <b>' + qL.at(qi).d + '</b><br>' +
       '<button onclick="retryQ()" style="margin-top:10px; padding:8px 16px; border:1px solid #e2e8f0; border-radius:10px; background:#f8fafc; font-weight:700; cursor:pointer; color:#18181b;">🔄 다시 시도하기</button>';
   }
   inp.disabled = true; done = true;
