@@ -23,7 +23,18 @@
   .tab.on { background: #fff; color: #4f46e5; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
   .card, .qbox { background: #fff; border-radius: 18px; padding: 16px 18px; margin-bottom: 12px; border: 1px solid #eef0f4; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03); }
   .row1 { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-  .de { font-size: 1.12rem; font-weight: 700; color: #1e1b4b; line-height: 1.45; }
+  .de { font-size: 1.12rem; font-weight: 700; color: #1e1b4b; line-height: 1.55; }
+  
+  /* 클릭 가능한 독일어 단어 스타일 */
+  .dw { cursor: pointer; border-bottom: 1.5px dashed #c7d2fe; border-radius: 4px; padding: 1px 2px; transition: background 0.15s, color 0.15s; }
+  .dw:active, .dw.sel { background: #e0e7ff; color: #4f46e5; border-bottom-color: #4f46e5; }
+
+  /* 작은 말풍선 도움말 툴팁 */
+  .tip { display: none; position: fixed; z-index: 120; background: #1e1b4b; color: #fff; padding: 10px 14px; border-radius: 12px; font-size: 0.86rem; box-shadow: 0 8px 20px rgba(30, 27, 75, 0.25); max-width: 230px; pointer-events: none; animation: tipPop 0.15s ease-out; }
+  .tip-title { font-weight: 800; color: #a5b4fc; font-size: 0.92rem; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.12); padding-bottom: 3px; }
+  .tip-list { margin: 0; padding-left: 16px; line-height: 1.45; color: #f8fafc; font-weight: 500; }
+  @keyframes tipPop { from { opacity: 0; transform: translateY(4px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
   .ibtn { background: #f4f5f8; border: none; border-radius: 11px; width: 38px; height: 38px; font-size: 1.05rem; cursor: pointer; margin-left: 6px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; transition: background 0.15s, transform 0.1s; }
   .ibtn:active { background: #e0e7ff; transform: scale(0.92); }
   .row2 { display: flex; justify-content: flex-end; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 1px solid #f1f5f9; gap: 8px; }
@@ -55,7 +66,9 @@
   @keyframes chiTwinkle { 0%, 100% { transform: scale(0) rotate(0deg); opacity: 0; } 50% { transform: scale(1) rotate(45deg); opacity: 1; } }
 </style>
 </head>
-<body>
+<body onclick="hideTip(event)">
+
+<div id="wTip" class="tip"></div>
 
 <div class="top">
   <button class="wbtn" id="fBtn" onclick="getNew()">✨ 새 문장 3개 뽑기</button>
@@ -156,12 +169,69 @@ var set = [
   {d:"Ich mache Kaffee.", k:"나 커피 만들고 있어.", tid:"init_2"},
   {d:"Das macht wirklich Spaß!", k:"그거 진짜 재미있다!", tid:"init_3"}
 ];
-var thumbs = 0, qL = [], qi = 0, done = false, sharedSR = null, ttsTimer = null, isListening = false;
+var thumbs = 0, qL = [], qi = 0, done = false, sharedSR = null, ttsTimer = null, isListening = false, tipTimer = null;
 var curAud = new Audio();
 window._utts = [];
 
 try { thumbs = parseInt(localStorage.getItem('g_th') || '0', 10); document.getElementById('tCnt').innerText = thumbs; } catch(e){}
 if (window.speechSynthesis) { try { speechSynthesis.getVoices(); } catch(e){} }
+
+function hideTip(e) {
+  if (e && e.target && e.target.classList && e.target.classList.contains('dw')) return;
+  var tip = document.getElementById('wTip');
+  if (tip) tip.style.display = 'none';
+  var sels = document.querySelectorAll('.dw.sel');
+  for (var i = 0; i < sels.length; i++) sels[i].classList.remove('sel');
+}
+
+// 독일어 단어 터치 시 한국어 뜻 1~3개 말풍선 표시 (독일어 -> 한국어 고정)
+function showWordTip(el, rawWord) {
+  var clean = rawWord.replace(/^[.,!?;:"'()]+|[.,!?;:"'()]+$/g, '');
+  if (!clean) return;
+
+  hideTip();
+  el.classList.add('sel');
+  if (tipTimer) { clearTimeout(tipTimer); tipTimer = null; }
+
+  var tip = document.getElementById('wTip');
+  tip.innerHTML = '<div class="tip-title">' + clean + '</div><div style="color:#cbd5e1; font-size:0.8rem;">뜻 찾는 중...</div>';
+  tip.style.display = 'block';
+
+  var rect = el.getBoundingClientRect();
+  var topPos = rect.top - 74;
+  if (topPos < 10) topPos = rect.bottom + 8;
+  var leftPos = Math.max(12, Math.min(window.innerWidth - 242, rect.left));
+  tip.style.top = topPos + 'px';
+  tip.style.left = leftPos + 'px';
+
+  // 사전 API(MyMemory: 독일어 de -> 한국어 ko)로 핵심 뜻 최대 3개 조회
+  var url = "https://translated.net" + encodeURIComponent(clean) + "&langpair=de|ko";
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var list = [];
+      if (data && data.responseData && data.responseData.translatedText) {
+        list.push(data.responseData.translatedText.trim());
+      }
+      if (data && data.matches && data.matches.length) {
+        for (var i = 0; i < data.matches.length; i++) {
+          var m = (data.matches[i].translation || '').trim();
+          if (m && list.indexOf(m) === -1 && /[가-힣]/.test(m) && m.length <= 18) {
+            list.push(m);
+          }
+          if (list.length >= 3) break;
+        }
+      }
+      if (list.length === 0) list.push("사전 결과 없음");
+      var liHtml = list.slice(0, 3).map(function(txt) { return '<li>' + txt + '</li>'; }).join('');
+      tip.innerHTML = '<div class="tip-title">' + clean + '</div><ol class="tip-list">' + liHtml + '</ol>';
+    })
+    .catch(function() {
+      tip.innerHTML = '<div class="tip-title">' + clean + '</div><div style="color:#fca5a5;">연결 오류</div>';
+    });
+
+  tipTimer = setTimeout(function() { hideTip(); }, 3500);
+}
 
 function setLv(lv) {
   curLv = lv;
@@ -335,10 +405,17 @@ function getPool(lv) {
     {d:"Um Missverständnisse zu vermeiden, sollten alle Vereinbarungen schriftlich festgehalten werden.", k:"오해를 피하기 위해 모든 합의 사항은 서면으로 기록해 두어야 합니다.", tid:"b2_12"},
     {d:"Die Studie weist darauf hin, dass chronischer Stress die Konzentrationsfähigkeit erheblich beeinträchtigt.", k:"그 연구는 만성 스트레스가 집중력을 크게 저하시킨다는 점을 지적합니다.", tid:"b2_13"},
     {d:"Ohne die tatkräftige Unterstützung unseres Teams wäre dieser Erfolg kaum möglich gewesen.", k:"우리 팀의 적극적인 지원이 없었더라면 이러한 성공은 거의 불가능했을 것입니다.", tid:"b2_14"},
-    {d:"Es bleibt abzuwarten, inwieweit sich diese neuen Maßnahmen in der Praxis bewähren.", k:"이러한 새로운 조치들이 실제 현장에서 어느 정도 효과를 발휘할지는 지켜봐야 합니다.", tid:"b2_15"},
+    {d:"Es bleibt abzuwarten, inweit sich diese neuen Maßnahmen in der Praxis bewähren.", k:"이러한 새로운 조치들이 실제 현장에서 어느 정도 효과를 발휘할지는 지켜봐야 합니다.", tid:"b2_15"},
     {d:"Darüber hinaus trägt ein bewusster Konsum maßgeblich zum Umweltschutz bei.", k:"게다가 의식적인 소비는 환경 보호에 결정적으로 기여합니다.", tid:"b2_16"}
   ];
 }
+function wrapWords(sentence) {
+  return sentence.split(' ').map(function(w) {
+    var safe = w.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    return '<span class="dw" onclick="showWordTip(this, \'' + safe + '\')">' + w + '</span>';
+  }).join(' ');
+}
+
 function toggleKo(i) {
   var el = document.getElementById('ko' + i);
   var btn = document.getElementById('eye' + i);
@@ -347,13 +424,14 @@ function toggleKo(i) {
 }
 
 function draw() {
+  hideTip();
   stopTts();
   stopMic();
   var html = "";
   for (var i = 0; i < set.length; i++) {
     var x = set[i];
     html += '<div class="card">' +
-      '<div class="row1"><span class="de">' + x.d + '</span><div style="display:flex;"><button class="ibtn" onclick="tts(set[' + i + '].d)">🔊</button><button class="ibtn" onclick="mic(' + i + ')">🎙️</button></div></div>' +
+      '<div class="row1"><span class="de">' + wrapWords(x.d) + '</span><div style="display:flex;"><button class="ibtn" onclick="tts(set[' + i + '].d)">🔊</button><button class="ibtn" onclick="mic(' + i + ')">🎙️</button></div></div>' +
       '<div class="row2"><span class="ko hide" id="ko' + i + '" onclick="toggleKo(' + i + ')">' + x.k + '</span><button class="minibtn" id="eye' + i + '" onclick="toggleKo(' + i + ')">▾</button></div>' +
       '<div id="fb' + i + '" style="font-size:0.84rem; margin-top:6px; font-weight:600;"></div>' +
     '</div>';
@@ -396,6 +474,7 @@ function getNew() {
 }
 
 function mode(m) {
+  hideTip();
   stopTts();
   stopMic();
   document.getElementById('t1').className = m === 1 ? 'tab on' : 'tab';
@@ -430,6 +509,7 @@ function playCuteSound() {
 }
 
 function dog() {
+  hideTip();
   stopTts();
   stopMic();
   document.getElementById('dTit').innerText = "🎉 현재 따봉 " + thumbs + "개!";
@@ -445,6 +525,7 @@ function getSR() {
 }
 
 function mic(i) {
+  hideTip();
   stopTts();
   stopMic();
   var r = getSR(), fb = document.getElementById('fb'+i);
