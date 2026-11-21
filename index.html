@@ -184,9 +184,42 @@ function parseKoWikt(wt) {
   return res;
 }
 
+function fetchWiktApi(lang, word) {
+  var base = "https://" + lang + ".wiktionary.org/w/api.php?action=parse&page=" + encodeURIComponent(word) + "&prop=wikitext&format=json";
+  return fetch(base + "&origin=*", { referrerPolicy: "origin" })
+    .then(function(r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    })
+    .catch(function() {
+      return new Promise(function(resolve, reject) {
+        var cbName = "_wiktCb_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+        var sc = document.createElement("script");
+        var timer = setTimeout(function() {
+          Reflect.deleteProperty(window, cbName);
+          if (sc.parentNode) sc.parentNode.removeChild(sc);
+          reject(new Error("요청 시간 초과"));
+        }, 5000);
+        Reflect.set(window, cbName, function(data) {
+          clearTimeout(timer);
+          Reflect.deleteProperty(window, cbName);
+          if (sc.parentNode) sc.parentNode.removeChild(sc);
+          resolve(data);
+        });
+        sc.onerror = function() {
+          clearTimeout(timer);
+          Reflect.deleteProperty(window, cbName);
+          if (sc.parentNode) sc.parentNode.removeChild(sc);
+          reject(new Error("사전 서버 차단"));
+        };
+        sc.src = base + "&callback=" + cbName;
+        document.body.appendChild(sc);
+      });
+    });
+}
+
 function fetchKoWikt(word) {
-  var url = "https://wiktionary.org" + encodeURIComponent(word) + "&prop=wikitext&format=json&origin=*";
-  return fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+  return fetchWiktApi("ko", word).then(function(data) {
     if (data && data.parse && data.parse.wikitext) {
       var wt = Object.values(data.parse.wikitext).at(0);
       return parseKoWikt(String(wt || ''));
@@ -196,11 +229,10 @@ function fetchKoWikt(word) {
 }
 
 function fetchDeLemma(word) {
-  var url = "https://wiktionary.org" + encodeURIComponent(word) + "&prop=wikitext&format=json&origin=*";
-  return fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+  return fetchWiktApi("de", word).then(function(data) {
     if (data && data.parse && data.parse.wikitext) {
       var wt = String(Object.values(data.parse.wikitext).at(0) || '');
-      var m = wt.match(/\{\{Grundformverweis[^|}]*\|([^|}]+)/i);
+      var m = wt.match(/\{\{(?:Grundformverweis|Lemmaverweis)[^|}]*\|([^|}]+)/i);
       if (m && m.at(1)) {
         return m.at(1).split('#').at(0).trim();
       }
@@ -208,6 +240,7 @@ function fetchDeLemma(word) {
     return "";
   });
 }
+
 
 function lookupWord(word) {
   return fetchKoWikt(word).then(function(list) {
