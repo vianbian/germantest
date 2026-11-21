@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="referrer" content="no-referrer">
+
 <title>매일 3문장 독일어 + 치와와 응원단</title>
 <link rel="icon" type="image/png" sizes="512x512" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
@@ -184,18 +184,34 @@ function parseKoWikt(wt) {
   return res;
 }
 
+function fetchFastJson(url, ms) {
+  return new Promise(function(resolve, reject) {
+    var timer = setTimeout(function() { reject(new Error("timeout")); }, ms);
+    fetch(url).then(function(r) {
+      clearTimeout(timer);
+      if (!r.ok) reject(new Error("http"));
+      else resolve(r.json());
+    }).catch(function(e) {
+      clearTimeout(timer);
+      reject(e);
+    });
+  });
+}
+
 function fetchKoWikt(word) {
-  return fetchWiktApi("ko", word).then(function(data) {
+  var url = "https://wiktionary.org" + encodeURIComponent(word) + "&prop=wikitext&format=json&origin=*";
+  return fetchFastJson(url, 2200).then(function(data) {
     if (data && data.parse && data.parse.wikitext) {
       var wt = Object.values(data.parse.wikitext).at(0);
       return parseKoWikt(String(wt || ''));
     }
     return new Array();
-  });
+  }).catch(function() { return new Array(); });
 }
 
 function fetchDeLemma(word) {
-  return fetchWiktApi("de", word).then(function(data) {
+  var url = "https://wiktionary.org" + encodeURIComponent(word) + "&prop=wikitext&format=json&origin=*";
+  return fetchFastJson(url, 2200).then(function(data) {
     if (data && data.parse && data.parse.wikitext) {
       var wt = String(Object.values(data.parse.wikitext).at(0) || '');
       var m = wt.match(/\{\{(?:Grundformverweis|Lemmaverweis)[^|}]*\|([^|}]+)/i);
@@ -204,13 +220,12 @@ function fetchDeLemma(word) {
       }
     }
     return "";
-  });
+  }).catch(function() { return ""; });
 }
 
 function fetchFallbackKo(word) {
   var url = "https://translated.net" + encodeURIComponent(word) + "&langpair=de|ko";
-  return fetch(url, { referrerPolicy: "origin" })
-    .then(function(r) { return r.json(); })
+  return fetchFastJson(url, 2500)
     .then(function(data) {
       var list = new Array();
       if (data && data.responseData && data.responseData.translatedText) {
@@ -232,33 +247,28 @@ function fetchFallbackKo(word) {
 }
 
 function lookupWord(word) {
-  return fetchKoWikt(word).then(function(list) {
-    if (list.length > 0) return { title: word, list: list };
-    var lower = word.toLowerCase();
-    if (lower !== word) {
-      return fetchKoWikt(lower).then(function(list2) {
-        if (list2.length > 0) return { title: lower, list: list2 };
-        return null;
+  var lower = word.toLowerCase();
+  return Promise.all([
+    fetchKoWikt(word),
+    lower !== word ? fetchKoWikt(lower) : Promise.resolve(new Array()),
+    fetchDeLemma(word),
+    fetchFallbackKo(word)
+  ]).then(function(res) {
+    var ko1 = res.at(0);
+    var ko2 = res.at(1);
+    var lemma = res.at(2);
+    var fb = res.at(3);
+    var titleText = lemma ? (word + " → " + lemma) : word;
+
+    if (ko1.length > 0) return { title: titleText, list: ko1 };
+    if (ko2.length > 0) return { title: titleText, list: ko2 };
+    if (fb.length > 0) return { title: titleText, list: fb };
+    if (lemma) {
+      return fetchFallbackKo(lemma).then(function(fb2) {
+        return { title: titleText, list: fb2 };
       });
     }
-    return null;
-  }).then(function(found) {
-    if (found) return found;
-    return fetchDeLemma(word).then(function(lemma) {
-      if (!lemma && word.toLowerCase() !== word) {
-        return fetchDeLemma(word.toLowerCase());
-      }
-      return lemma;
-    }).then(function(lemma) {
-      var target = lemma || word;
-      var titleText = lemma ? (word + " → " + lemma) : word;
-      return fetchKoWikt(target).then(function(list3) {
-        if (list3.length > 0) return { title: titleText, list: list3 };
-        return fetchFallbackKo(target).then(function(fbList) {
-          return { title: titleText, list: fbList };
-        });
-      });
-    });
+    return { title: word, list: new Array() };
   });
 }
 
@@ -289,8 +299,6 @@ function showWordTip(el, rawWord) {
 
   tipTimer = setTimeout(function() { hideTip(); }, 3500);
 }
-
-
 
 
 function setLv(lv) {
