@@ -10,32 +10,26 @@
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f7f8fa; margin: 0 auto; padding: 18px 16px; color: #18181b; max-width: 460px; letter-spacing: -0.02em; }
-  
   .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
   .wbtn { background: #18181b; color: #fff; border: none; border-radius: 14px; padding: 10px 16px; font-size: 0.9rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(24, 24, 27, 0.12); transition: transform 0.15s ease; }
   .wbtn:active { transform: scale(0.96); }
   .badge { background: #fff; color: #d97706; padding: 8px 14px; border-radius: 20px; font-weight: 700; cursor: pointer; font-size: 0.88rem; border: 1px solid #fde68a; box-shadow: 0 2px 8px rgba(0,0,0,0.03); transition: transform 0.15s ease; }
   .badge:active { transform: scale(0.95); }
-
   .lvbar { display: flex; gap: 6px; margin-bottom: 12px; }
   .lvbtn { flex: 1; padding: 7px 0; border: 1.5px solid #e2e8f0; border-radius: 10px; background: #fff; color: #64748b; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.15s ease; }
   .lvbtn.on { background: #eef2ff; border-color: #4f46e5; color: #4f46e5; }
-
   .bar { display: flex; background: #ebedf2; padding: 4px; border-radius: 14px; margin-bottom: 16px; gap: 4px; }
   .tab { flex: 1; padding: 10px; border: none; border-radius: 10px; font-size: 0.92rem; font-weight: 600; cursor: pointer; background: transparent; color: #64748b; transition: all 0.2s ease; }
   .tab.on { background: #fff; color: #4f46e5; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
-
   .card, .qbox { background: #fff; border-radius: 18px; padding: 16px 18px; margin-bottom: 12px; border: 1px solid #eef0f4; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03); }
   .row1 { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
   .de { font-size: 1.12rem; font-weight: 700; color: #1e1b4b; line-height: 1.45; }
   .ibtn { background: #f4f5f8; border: none; border-radius: 11px; width: 38px; height: 38px; font-size: 1.05rem; cursor: pointer; margin-left: 6px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; transition: background 0.15s, transform 0.1s; }
   .ibtn:active { background: #e0e7ff; transform: scale(0.92); }
-  
   .row2 { display: flex; justify-content: flex-end; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 1px solid #f1f5f9; gap: 8px; }
   .ko { font-weight: 600; cursor: pointer; padding: 4px 10px; border-radius: 8px; text-align: right; font-size: 0.95rem; color: #334155; transition: all 0.2s ease; }
   .hide { color: transparent; background: #f1f5f9; user-select: none; }
   .minibtn { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; border-radius: 8px; width: 28px; height: 28px; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
-
   .inp { width: 100%; padding: 13px 14px; font-size: 1rem; border: 1.5px solid #e2e8f0; border-radius: 12px; margin: 12px 0 10px; outline: none; background: #f8fafc; transition: all 0.2s; }
   .inp:focus { border-color: #4f46e5; background: #fff; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
   .ubar { display: flex; gap: 8px; margin-bottom: 12px; }
@@ -43,10 +37,8 @@
   .ubtn:active { background: #e0e7ff; }
   .abtn { width: 100%; padding: 13px; border: none; border-radius: 12px; font-size: 0.98rem; font-weight: 700; cursor: pointer; background: #10b981; color: #fff; margin-top: 8px; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); transition: transform 0.1s; }
   .abtn:active { transform: scale(0.98); }
-
   .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 99; padding: 20px; }
   .mcard { background: #fff; padding: 26px 22px 18px; border-radius: 28px; text-align: center; max-width: 310px; width: 100%; border: 3px solid #fde68a; box-shadow: 0 20px 40px rgba(0,0,0,0.18); }
-
   #dogM .chihuahua-jump { transform-origin: 205px 318px; animation: chiCuteBounce 0.8s infinite ease-in-out; }
   @keyframes chiCuteBounce { 0%, 100% { transform: translateY(0) scale(1.03, 0.97); } 15% { transform: translateY(3px) scale(1.05, 0.95); } 50% { transform: translateY(-42px) scale(0.98, 1.02); } 85% { transform: translateY(0) scale(1.02, 0.98); } }
   #dogM .ground-shadow { transform-origin: 205px 323px; animation: chiShadowPulse 0.8s infinite ease-in-out; }
@@ -160,9 +152,9 @@
 var curLv = 'A1';
 var seenMap = { A1: [], A2: [], B1: [], B2: [] };
 var set = [
-  {d:"Was machst du?", k:"너 뭐 해?"},
-  {d:"Ich mache Kaffee.", k:"나 커피 만들고 있어."},
-  {d:"Das macht wirklich Spaß!", k:"그거 진짜 재미있다!"}
+  {d:"Was machst du?", k:"너 뭐 해?", tid:"init_1"},
+  {d:"Ich mache Kaffee.", k:"나 커피 만들고 있어.", tid:"init_2"},
+  {d:"Das macht wirklich Spaß!", k:"그거 진짜 재미있다!", tid:"init_3"}
 ];
 var thumbs = 0, qL = [], qi = 0, done = false, sharedSR = null, ttsTimer = null, isListening = false;
 var curAud = new Audio();
@@ -313,7 +305,7 @@ function getPool(lv) {
       {d:"Obwohl das Wetter ziemlich schlecht war, hatten wir viel Spaß.", k:"날씨가 꽤 안 좋았음에도 불구하고 우리는 아주 즐거웠어요.", tid:"b1_3"},
       {d:"Ich freue mich schon sehr darauf, dich bald wiederzusehen.", k:"곧 너를 다시 만나게 될 것을 벌써부터 기대하고 있어.", tid:"b1_4"},
       {d:"Es ist gesundheitlich wichtig, dass man regelmäßig Sport treibt.", k:"건강을 위해서는 규칙적으로 운동을 하는 것이 중요합니다.", tid:"b1_5"},
-      {d:"Der Film, den wir gestern Abend gesehen haben, war extrem spannend.", k:"우리가 어제 본 그 영화는 엄청나게 흥미진진했어요.", tid:"b1_6"},
+      {d:"Der Film, den wir gestern Abend gesehen haben, war extrem spannend.", k:"우리가 어젯밤에 본 그 영화는 엄청나게 흥미진진했어요.", tid:"b1_6"},
       {d:"Anstatt den ganzen Abend fernzusehen, lese ich lieber ein Buch.", k:"저녁 내내 TV를 보는 대신에 차라리 책을 읽는 편이 나아요.", tid:"b1_7"},
       {d:"Ich habe mich dazu entschlossen, einen Intensivkurs zu besuchen.", k:"저는 집중 어학 코스를 수강하기로 결심했습니다.", tid:"b1_8"},
       {d:"Falls es morgen regnen sollte, verschieben wir das Picknick.", k:"만약 내일 비가 온다면 소풍을 연기하도록 하죠.", tid:"b1_9"},
@@ -347,7 +339,6 @@ function getPool(lv) {
     {d:"Darüber hinaus trägt ein bewusster Konsum maßgeblich zum Umweltschutz bei.", k:"게다가 의식적인 소비는 환경 보호에 결정적으로 기여합니다.", tid:"b2_16"}
   ];
 }
-```javascript
 function toggleKo(i) {
   var el = document.getElementById('ko' + i);
   var btn = document.getElementById('eye' + i);
@@ -375,12 +366,10 @@ function getNew() {
   var pool = getPool(curLv);
   var seen = seenMap[curLv];
 
-  // 최근에 보지 않은 문장만 먼저 필터링
   var avail = pool.filter(function(item) {
     return seen.indexOf(item.d) === -1;
   });
 
-  // 남은 문장이 3개 미만이면 기록을 초기화하고 새 사이클 시작 (직전 3문장은 제외)
   if (avail.length < 3) {
     var prevTexts = set.map(function(s) { return s.d; });
     seenMap[curLv] = prevTexts.slice();
@@ -389,7 +378,6 @@ function getNew() {
     });
   }
 
-  // 무작위 셔플 후 서로 다른 패턴(tid) 3개 선택
   var shuffled = avail.slice().sort(function() { return Math.random() - 0.5; });
   var res = [];
   var usedTids = [];
