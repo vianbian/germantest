@@ -164,18 +164,18 @@ function cleanWikiLine(line) {
 
 function parseKoWikt(wt) {
   var deIdx = wt.indexOf('독일어');
-  if (deIdx === -1) return [];
+  if (deIdx === -1) return new Array();
   var sub = wt.slice(deIdx);
   var nextLang = sub.indexOf('\n== ');
   if (nextLang !== -1) sub = sub.slice(0, nextLang);
 
   var lines = sub.split('\n');
-  var res = [];
+  var res = new Array();
   for (var i = 0; i < lines.length; i++) {
     var line = lines.at(i).trim();
-    if (line.indexOf('# ') === 0) {
+    if (line.indexOf('# ') === 0 || line.indexOf('* ') === 0 || line.indexOf(': ') === 0) {
       var cleaned = cleanWikiLine(line);
-      if (cleaned && cleaned.length > 1 && res.indexOf(cleaned) === -1) {
+      if (cleaned && cleaned.length > 1 && /[가-힣]/.test(cleaned) && res.indexOf(cleaned) === -1) {
         res.push(cleaned);
       }
     }
@@ -184,47 +184,13 @@ function parseKoWikt(wt) {
   return res;
 }
 
-function fetchWiktApi(lang, word) {
-  var base = "https://" + lang + ".wiktionary.org/w/api.php?action=parse&page=" + encodeURIComponent(word) + "&prop=wikitext&format=json";
-  return fetch(base + "&origin=*", { referrerPolicy: "origin" })
-    .then(function(r) {
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      return r.json();
-    })
-    .catch(function() {
-      return new Promise(function(resolve, reject) {
-        var cbName = "_wiktCb_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
-        var sc = document.createElement("script");
-        var timer = setTimeout(function() {
-          Reflect.deleteProperty(window, cbName);
-          if (sc.parentNode) sc.parentNode.removeChild(sc);
-          reject(new Error("요청 시간 초과"));
-        }, 5000);
-        Reflect.set(window, cbName, function(data) {
-          clearTimeout(timer);
-          Reflect.deleteProperty(window, cbName);
-          if (sc.parentNode) sc.parentNode.removeChild(sc);
-          resolve(data);
-        });
-        sc.onerror = function() {
-          clearTimeout(timer);
-          Reflect.deleteProperty(window, cbName);
-          if (sc.parentNode) sc.parentNode.removeChild(sc);
-          reject(new Error("사전 서버 차단"));
-        };
-        sc.src = base + "&callback=" + cbName;
-        document.body.appendChild(sc);
-      });
-    });
-}
-
 function fetchKoWikt(word) {
   return fetchWiktApi("ko", word).then(function(data) {
     if (data && data.parse && data.parse.wikitext) {
       var wt = Object.values(data.parse.wikitext).at(0);
       return parseKoWikt(String(wt || ''));
     }
-    return [];
+    return new Array();
   });
 }
 
@@ -241,6 +207,29 @@ function fetchDeLemma(word) {
   });
 }
 
+function fetchFallbackKo(word) {
+  var url = "https://translated.net" + encodeURIComponent(word) + "&langpair=de|ko";
+  return fetch(url, { referrerPolicy: "origin" })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var list = new Array();
+      if (data && data.responseData && data.responseData.translatedText) {
+        var mainT = String(data.responseData.translatedText).trim();
+        if (mainT && /[가-힣]/.test(mainT)) list.push(mainT);
+      }
+      if (data && Array.isArray(data.matches)) {
+        for (var i = 0; i < data.matches.length; i++) {
+          var item = data.matches.at(i);
+          var tr = item ? String(item.translation || '').trim() : '';
+          if (tr && /[가-힣]/.test(tr) && tr.length <= 16 && list.indexOf(tr) === -1 && list.length < 3) {
+            list.push(tr);
+          }
+        }
+      }
+      return list;
+    })
+    .catch(function() { return new Array(); });
+}
 
 function lookupWord(word) {
   return fetchKoWikt(word).then(function(list) {
@@ -261,12 +250,14 @@ function lookupWord(word) {
       }
       return lemma;
     }).then(function(lemma) {
-      if (lemma) {
-        return fetchKoWikt(lemma).then(function(list3) {
-          return { title: word + " → " + lemma, list: list3 };
+      var target = lemma || word;
+      var titleText = lemma ? (word + " → " + lemma) : word;
+      return fetchKoWikt(target).then(function(list3) {
+        if (list3.length > 0) return { title: titleText, list: list3 };
+        return fetchFallbackKo(target).then(function(fbList) {
+          return { title: titleText, list: fbList };
         });
-      }
-      return { title: word, list: [] };
+      });
     });
   });
 }
@@ -290,14 +281,15 @@ function showWordTip(el, rawWord) {
   tip.style.left = leftPos + 'px';
 
   lookupWord(clean).then(function(res) {
-    var msg = (res.list && res.list.length > 0) ? res.list : ["사전에 미등재된 단어입니다"];
+    var msg = (res.list && res.list.length > 0) ? res.list : Array.of("뜻을 찾지 못했습니다");
     renderTipList(tip, res.title, msg);
   }).catch(function() {
-    tip.innerHTML = '<div class="tip-title">' + clean + '</div><div style="color:#fca5a5;">사전 연결 오류</div>';
+    tip.innerHTML = '<div class="tip-title">' + clean + '</div><div style="color:#fca5a5;">잠시 후 다시 눌러주세요</div>';
   });
 
   tipTimer = setTimeout(function() { hideTip(); }, 3500);
 }
+
 
 
 
