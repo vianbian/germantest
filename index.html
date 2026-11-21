@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="referrer" content="no-referrer">
 <title>매일 3문장 독일어 + 치와와 응원단</title>
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -174,10 +173,10 @@ var set = [
   {d:"Das macht wirklich Spaß!", k:"그거 진짜 재미있다!"}
 ];
 var thumbs = 0, qL = [], qi = 0, done = false, sharedSR = null, ttsTimer = null, isListening = false;
-var curAud = new Audio();
 window._utts = [];
 
 try { thumbs = parseInt(localStorage.getItem('g_th') || '0', 10); document.getElementById('tCnt').innerText = thumbs; } catch(e){}
+if (window.speechSynthesis) { try { speechSynthesis.getVoices(); } catch(e){} }
 
 function stopMic() {
   isListening = false;
@@ -197,69 +196,50 @@ function stopMic() {
 function stopTts() {
   if (ttsTimer) { clearTimeout(ttsTimer); ttsTimer = null; }
   if (window.speechSynthesis) { try { speechSynthesis.cancel(); } catch(e){} }
-  try { curAud.pause(); curAud.onended = null; curAud.onerror = null; } catch(e){}
 }
 
-// 클릭 즉시(0초 지연) 단일 오디오 객체로 2회 연속 재생
 function tts(t) {
   stopMic();
   stopTts();
 
-  var count = 0;
-  var sourceIdx = 0;
-  var sources = [
-    "https://google.com" + encodeURIComponent(t),
-    "https://streamelements.com" + encodeURIComponent(t)
-  ];
-
-  function playNativeFallback() {
-    if (!window.speechSynthesis) return;
-    var u = new SpeechSynthesisUtterance(t);
-    u.lang = 'de-DE';
-    u.rate = (count === 1) ? 0.68 : 1.0;
-    window._utts.push(u);
-    u.onend = function() {
-      count++;
-      if (count < 2) ttsTimer = setTimeout(playNativeFallback, 450);
-    };
-    speechSynthesis.speak(u);
+  if (!window.speechSynthesis) {
+    alert("이 브라우저는 음성 출력을 지원하지 않습니다.");
+    return;
   }
 
-  function playAudioNow() {
-    if (count >= 2) return;
-    curAud.src = sources[sourceIdx];
-    curAud.playbackRate = (count === 1) ? 0.72 : 1.0;
-
-    curAud.onended = function() {
-      count++;
-      if (count < 2) {
-        ttsTimer = setTimeout(playAudioNow, 450);
-      }
-    };
-
-    curAud.onerror = function() {
-      if (sourceIdx + 1 < sources.length) {
-        sourceIdx++;
-        playAudioNow();
-      } else {
-        playNativeFallback();
-      }
-    };
-
-    var p = curAud.play();
-    if (p && p.catch) {
-      p.catch(function() {
-        if (sourceIdx + 1 < sources.length) {
-          sourceIdx++;
-          playAudioNow();
-        } else {
-          playNativeFallback();
-        }
-      });
+  var voices = speechSynthesis.getVoices();
+  var deVoice = null;
+  for (var i = 0; i < voices.length; i++) {
+    if (voices[i].lang && voices[i].lang.toLowerCase().indexOf('de') !== -1) {
+      deVoice = voices[i];
+      break;
     }
   }
 
-  playAudioNow();
+  var count = 0;
+  function speakOnce() {
+    if (count >= 2) return;
+    var u = new SpeechSynthesisUtterance(t);
+    u.lang = 'de-DE';
+    if (deVoice) u.voice = deVoice;
+    u.volume = 1.0;
+    u.rate = (count === 1) ? 0.68 : 1.0;
+    window._utts.push(u);
+
+    u.onend = function() {
+      count++;
+      if (count < 2) ttsTimer = setTimeout(speakOnce, 450);
+    };
+    u.onerror = function(e) {
+      if (e.error !== 'interrupted' && e.error !== 'canceled') {
+        alert("갤럭시 [설정 > 일반 > 글자 읽어주기]에서 독일어 음성을 확인해 주세요.");
+      }
+    };
+
+    speechSynthesis.speak(u);
+  }
+
+  speakOnce();
 }
 
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
