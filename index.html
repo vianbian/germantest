@@ -11,9 +11,8 @@
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f7f8fa; margin: 0 auto; padding: 18px 16px; color: #18181b; max-width: 460px; letter-spacing: -0.02em; }
   .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-  .wbtn { background: #18181b; color: #fff; border: none; border-radius: 14px; padding: 10px 16px; font-size: 0.9rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(24, 24, 27, 0.12); transition: transform 0.15s ease; }
-  .wbtn:active { transform: scale(0.96); }
-  .badge { background: #fff; color: #d97706; padding: 8px 14px; border-radius: 20px; font-weight: 700; cursor: pointer; font-size: 0.88rem; border: 1px solid #fde68a; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+  .wbtn { background: #18181b; color: #fff; border: none; border-radius: 14px; padding: 10px 16px; font-size: 0.9rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(24, 24, 27, 0.12); }
+  .badge { background: #fff; color: #d97706; padding: 8px 14px; border-radius: 20px; font-weight: 700; cursor: pointer; font-size: 0.88rem; border: 1px solid #fde68a; }
   .lvbar { display: flex; gap: 6px; margin-bottom: 12px; }
   .lvbtn { flex: 1; padding: 7px 0; border: 1.5px solid #e2e8f0; border-radius: 10px; background: #fff; color: #64748b; font-size: 0.82rem; font-weight: 700; cursor: pointer; }
   .lvbtn.on { background: #eef2ff; border-color: #4f46e5; color: #4f46e5; }
@@ -141,10 +140,15 @@ function hideTip(e) {
   for (var i = 0; i < sels.length; i++) sels[i].classList.remove('sel');
 }
 
+function renderTipList(tip, clean, list) {
+  if (!list || list.length === 0) list = ["뜻을 찾지 못했습니다"];
+  var liHtml = list.slice(0, 3).map(function(txt) { return '<li>' + txt + '</li>'; }).join('');
+  tip.innerHTML = '<div class="tip-title">' + clean + '</div><ol class="tip-list">' + liHtml + '</ol>';
+}
+
 function showWordTip(el, rawWord) {
   var clean = rawWord.replace(/^[.,!?;:"'()]+|[.,!?;:"'()]+$/g, '');
   if (!clean) return;
-
   hideTip();
   el.classList.add('sel');
   if (tipTimer) { clearTimeout(tipTimer); tipTimer = null; }
@@ -160,21 +164,20 @@ function showWordTip(el, rawWord) {
   tip.style.top = topPos + 'px';
   tip.style.left = leftPos + 'px';
 
-  var url = "https://googleapis.com" + encodeURIComponent(clean);
-  fetch(url)
+  var gUrl = "https://googleapis.com" + encodeURIComponent(clean);
+  fetch(gUrl)
     .then(function(r) { return r.json(); })
     .then(function(data) {
       var list = [];
-      if (data && data && data && data) {
-        var mainT = String(data).trim();
-        if (mainT) list.push(mainT);
+      if (Array.isArray(data) && Array.isArray(data[0]) && Array.isArray(data[0][0]) && data[0][0][0]) {
+        list.push(String(data[0][0][0]).trim());
       }
-      if (data && data && data.length) {
-        for (var i = 0; i < data.length; i++) {
-          var entries = data[i];
-          if (entries && entries.length) {
-            for (var j = 0; j < entries.length; j++) {
-              var w = String(entries[j]).trim();
+      if (Array.isArray(data) && Array.isArray(data[1])) {
+        for (var i = 0; i < data[1].length; i++) {
+          var group = data[1][i];
+          if (Array.isArray(group) && Array.isArray(group[1])) {
+            for (var j = 0; j < group[1].length; j++) {
+              var w = String(group[1][j]).trim();
               if (w && list.indexOf(w) === -1) list.push(w);
               if (list.length >= 3) break;
             }
@@ -182,17 +185,33 @@ function showWordTip(el, rawWord) {
           if (list.length >= 3) break;
         }
       }
-      if (list.length === 0) list.push("뜻을 찾지 못했습니다");
-      var liHtml = list.slice(0, 3).map(function(txt) { return '<li>' + txt + '</li>'; }).join('');
-      tip.innerHTML = '<div class="tip-title">' + clean + '</div><ol class="tip-list">' + liHtml + '</ol>';
+      renderTipList(tip, clean, list);
     })
     .catch(function() {
-      tip.innerHTML = '<div class="tip-title">' + clean + '</div><div style="color:#fca5a5;">번역 연결 실패</div>';
+      var mUrl = "https://translated.net" + encodeURIComponent(clean) + "&langpair=de|ko";
+      fetch(mUrl)
+        .then(function(r) { return r.json(); })
+        .then(function(mData) {
+          var list = [];
+          if (mData && mData.responseData && mData.responseData.translatedText) {
+            list.push(String(mData.responseData.translatedText).trim());
+          }
+          if (mData && Array.isArray(mData.matches)) {
+            for (var i = 0; i < mData.matches.length; i++) {
+              var tr = String(mData.matches[i].translation || '').trim();
+              if (tr && list.indexOf(tr) === -1 && /[가-힣]/.test(tr) && tr.length <= 16) list.push(tr);
+              if (list.length >= 3) break;
+            }
+          }
+          renderTipList(tip, clean, list);
+        })
+        .catch(function() {
+          tip.innerHTML = '<div class="tip-title">' + clean + '</div><div style="color:#fca5a5;">번역 연결 실패</div>';
+        });
     });
 
   tipTimer = setTimeout(function() { hideTip(); }, 3500);
 }
-
 function setLv(lv) {
   curLv = lv;
   var lvs = ['A1', 'A2', 'B1', 'B2'];
@@ -229,10 +248,7 @@ function playWebAudio(t) {
     if (count >= 2) return;
     curAud.src = "https://streamelements.com" + encodeURIComponent(t);
     curAud.playbackRate = (count === 1) ? 0.72 : 1.0;
-    curAud.onended = function() {
-      count++;
-      if (count < 2) ttsTimer = setTimeout(nextPlay, 450);
-    };
+    curAud.onended = function() { count++; if (count < 2) ttsTimer = setTimeout(nextPlay, 450); };
     curAud.play().catch(function(){});
   }
   nextPlay();
@@ -286,16 +302,10 @@ function pickFromPool(pool) {
 }
 
 function getNew() {
-  if (allData && allData[curLv]) {
-    pickFromPool(allData[curLv]);
-    return;
-  }
+  if (allData && allData[curLv]) { pickFromPool(allData[curLv]); return; }
   fetch('sentences.json?v=' + Date.now())
     .then(function(r) { return r.json(); })
-    .then(function(json) {
-      allData = json;
-      if (allData[curLv]) pickFromPool(allData[curLv]);
-    })
+    .then(function(json) { allData = json; if (allData[curLv]) pickFromPool(allData[curLv]); })
     .catch(function() { draw(); });
 }
 function wrapWords(sentence) {
@@ -387,7 +397,6 @@ function mic(i) {
   r.onerror = function(e) { if (!isListening) return; isListening = false; fb.style.color='#ef4444'; fb.innerText='⚠️ 오류: '+e.error; };
   setTimeout(function(){ if(isListening) { try { r.start(); } catch(e){} } }, 120);
 }
-
 function initQ() {
   qL = set.slice().sort(function(){ return Math.random()-0.5; }); qi = 0;
   document.getElementById('inp').style.display='block';
