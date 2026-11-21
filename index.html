@@ -169,21 +169,22 @@ function showWordTip(el, rawWord) {
     .then(function(r) { return r.json(); })
     .then(function(data) {
       var list = [];
-      if (Array.isArray(data) && Array.isArray(data[0]) && Array.isArray(data[0][0]) && data[0][0][0]) {
-        list.push(String(data[0][0][0]).trim());
-      }
-      if (Array.isArray(data) && Array.isArray(data[1])) {
-        for (var i = 0; i < data[1].length; i++) {
-          var group = data[1][i];
-          if (Array.isArray(group) && Array.isArray(group[1])) {
-            for (var j = 0; j < group[1].length; j++) {
-              var w = String(group[1][j]).trim();
-              if (w && list.indexOf(w) === -1) list.push(w);
-              if (list.length >= 3) break;
-            }
+      var firstBlock = Array.isArray(data) ? data.at(0) : null;
+      var firstItem = Array.isArray(firstBlock) ? firstBlock.at(0) : null;
+      var mainText = Array.isArray(firstItem) ? firstItem.at(0) : null;
+      if (mainText) list.push(String(mainText).trim());
+
+      var dictBlock = Array.isArray(data) ? data.at(1) : null;
+      if (Array.isArray(dictBlock)) {
+        dictBlock.forEach(function(group) {
+          var words = Array.isArray(group) ? group.at(1) : null;
+          if (Array.isArray(words)) {
+            words.forEach(function(w) {
+              var str = String(w).trim();
+              if (str && list.indexOf(str) === -1 && list.length < 3) list.push(str);
+            });
           }
-          if (list.length >= 3) break;
-        }
+        });
       }
       renderTipList(tip, clean, list);
     })
@@ -197,11 +198,10 @@ function showWordTip(el, rawWord) {
             list.push(String(mData.responseData.translatedText).trim());
           }
           if (mData && Array.isArray(mData.matches)) {
-            for (var i = 0; i < mData.matches.length; i++) {
-              var tr = String(mData.matches[i].translation || '').trim();
-              if (tr && list.indexOf(tr) === -1 && /[가-힣]/.test(tr) && tr.length <= 16) list.push(tr);
-              if (list.length >= 3) break;
-            }
+            mData.matches.forEach(function(m) {
+              var tr = String(m.translation || '').trim();
+              if (tr && list.indexOf(tr) === -1 && /[가-힣]/.test(tr) && tr.length <= 16 && list.length < 3) list.push(tr);
+            });
           }
           renderTipList(tip, clean, list);
         })
@@ -212,6 +212,7 @@ function showWordTip(el, rawWord) {
 
   tipTimer = setTimeout(function() { hideTip(); }, 3500);
 }
+
 function setLv(lv) {
   curLv = lv;
   var lvs = ['A1', 'A2', 'B1', 'B2'];
