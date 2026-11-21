@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>매일 3문장 독일어 + 치와와 응원단</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f7f8fa; margin: 0 auto; padding: 18px 16px; color: #18181b; max-width: 460px; letter-spacing: -0.02em; }
+  
+  /* 상단 헤더 */
+  .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .wbtn { background: #18181b; color: #fff; border: none; border-radius: 14px; padding: 10px 16px; font-size: 0.9rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(24, 24, 27, 0.12); transition: transform 0.15s ease; }
+  .wbtn:active { transform: scale(0.96); }
+  .badge { background: #fff; color: #d97706; padding: 8px 14px; border-radius: 20px; font-weight: 700; cursor: pointer; font-size: 0.88rem; border: 1px solid #fde68a; box-shadow: 0 2px 8px rgba(0,0,0,0.03); transition: transform 0.15s ease; }
+  .badge:active { transform: scale(0.95); }
+
+  /* 모던 세그먼트 탭 바 */
+  .bar { display: flex; background: #ebedf2; padding: 4px; border-radius: 14px; margin-bottom: 16px; gap: 4px; }
+  .tab { flex: 1; padding: 10px; border: none; border-radius: 10px; font-size: 0.92rem; font-weight: 600; cursor: pointer; background: transparent; color: #64748b; transition: all 0.2s ease; }
+  .tab.on { background: #fff; color: #4f46e5; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+
+  /* 카드 디자인 */
+  .card, .qbox { background: #fff; border-radius: 18px; padding: 16px 18px; margin-bottom: 12px; border: 1px solid #eef0f4; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03); }
+  .row1 { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .de { font-size: 1.15rem; font-weight: 700; color: #1e1b4b; line-height: 1.4; }
+  .ibtn { background: #f4f5f8; border: none; border-radius: 11px; width: 38px; height: 38px; font-size: 1.05rem; cursor: pointer; margin-left: 6px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; transition: background 0.15s, transform 0.1s; }
+  .ibtn:active { background: #e0e7ff; transform: scale(0.92); }
+  
+  .row2 { display: flex; justify-content: flex-end; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 1px solid #f1f5f9; gap: 8px; }
+  .ko { font-weight: 600; cursor: pointer; padding: 4px 10px; border-radius: 8px; text-align: right; font-size: 0.95rem; color: #334155; transition: all 0.2s ease; }
+  .hide { color: transparent; background: #f1f5f9; user-select: none; }
+  .minibtn { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; border-radius: 8px; width: 28px; height: 28px; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+
+  /* 테스트 화면 */
+  .inp { width: 100%; padding: 13px 14px; font-size: 1rem; border: 1.5px solid #e2e8f0; border-radius: 12px; margin: 12px 0 10px; outline: none; background: #f8fafc; transition: all 0.2s; }
+  .inp:focus { border-color: #4f46e5; background: #fff; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+  .ubar { display: flex; gap: 8px; margin-bottom: 12px; }
+  .ubtn { flex: 1; padding: 9px; background: #f4f5f8; border: none; border-radius: 10px; font-weight: 700; font-size: 1rem; cursor: pointer; color: #4f46e5; transition: background 0.15s; }
+  .ubtn:active { background: #e0e7ff; }
+  .abtn { width: 100%; padding: 13px; border: none; border-radius: 12px; font-size: 0.98rem; font-weight: 700; cursor: pointer; background: #10b981; color: #fff; margin-top: 8px; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); transition: transform 0.1s; }
+  .abtn:active { transform: scale(0.98); }
+
+  /* 모달 팝업 */
+  .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 99; padding: 20px; }
+  .mcard { background: #fff; padding: 26px 22px; border-radius: 28px; text-align: center; max-width: 310px; width: 100%; border: 3px solid #fde68a; box-shadow: 0 20px 40px rgba(0,0,0,0.18); }
+
+  #dogM .chihuahua-jump { transform-origin: 205px 318px; animation: chiCuteBounce 0.8s infinite ease-in-out; }
+  @keyframes chiCuteBounce { 0%, 100% { transform: translateY(0) scale(1.03, 0.97); } 15% { transform: translateY(3px) scale(1.05, 0.95); } 50% { transform: translateY(-42px) scale(0.98, 1.02); } 85% { transform: translateY(0) scale(1.02, 0.98); } }
+  #dogM .ground-shadow { transform-origin: 205px 323px; animation: chiShadowPulse 0.8s infinite ease-in-out; }
+  @keyframes chiShadowPulse { 0%, 100% { transform: scale(1); opacity: 0.22; } 15% { transform: scale(1.06); opacity: 0.26; } 50% { transform: scale(0.65); opacity: 0.08; } }
+  #dogM .ear-left { transform-origin: 156px 152px; animation: chiEarL 0.8s infinite ease-in-out; }
+  #dogM .ear-right { transform-origin: 224px 152px; animation: chiEarR 0.8s infinite ease-in-out; }
+  @keyframes chiEarL { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-5deg); } }
+  @keyframes chiEarR { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(5deg); } }
+  #dogM .tail { transform-origin: 260px 252px; animation: chiTailWag 0.4s infinite alternate ease-in-out; }
+  @keyframes chiTailWag { from { transform: rotate(-6deg); } to { transform: rotate(10deg); } }
+  #dogM .sparkle-anim { animation: chiTwinkle 1.6s infinite ease-in-out; }
+  #dogM .d1 { animation-delay: 0s; } #dogM .d2 { animation-delay: 0.4s; } #dogM .d3 { animation-delay: 0.8s; }
+  #dogM .d4 { animation-delay: 1.2s; } #dogM .d5 { animation-delay: 0.2s; } #dogM .d6 { animation-delay: 1.0s; }
+  @keyframes chiTwinkle { 0%, 100% { transform: scale(0) rotate(0deg); opacity: 0; } 50% { transform: scale(1) rotate(45deg); opacity: 1; } }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <button class="wbtn" id="fBtn" onclick="getNew()">✨ 새 문장 3개 뽑기</button>
+  <div class="badge" onclick="dog()">👍 <span id="tCnt">0</span> · 🐶3개마다</div>
+</div>
+
+<div class="bar">
+  <button class="tab on" id="t1" onclick="mode(1)">📖 3문장 학습</button>
+  <button class="tab" id="t2" onclick="mode(2)">✍️ 테스트</button>
+</div>
+
+<div id="v1"></div>
+
+<div id="v2" style="display:none;">
+  <div class="qbox">
+    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; color:#64748b; font-weight:600;">
+      <span id="qStep">문제 1 / 3</span>
+      <span style="color:#4f46e5; cursor:pointer; background:#eef2ff; padding:4px 10px; border-radius:8px;" onclick="tts(qL[qi].d)">🔊 발음 힌트</span>
+    </div>
+    <h3 id="qTxt" style="margin:14px 0 8px; font-size:1.15rem; color:#18181b;"></h3>
+    <input type="text" id="inp" class="inp" placeholder="독일어 입력 (a, o, u, ss 인정)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') chk()">
+    <div class="ubar">
+      <button class="ubtn" onclick="ins('ä')">ä</button>
+      <button class="ubtn" onclick="ins('ö')">ö</button>
+      <button class="ubtn" onclick="ins('ü')">ü</button>
+      <button class="ubtn" onclick="ins('ß')">ß</button>
+    </div>
+    <button class="abtn" style="background:#4f46e5; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);" id="qMic" onclick="micQ()">🎙️ 말하기로 풀기</button>
+    <button class="abtn" id="cBtn" onclick="chk()">정답 확인</button>
+    <div id="rMsg" style="margin-top:14px; font-weight:600; text-align:center; font-size:0.95rem; line-height:1.5;"></div>
+  </div>
+</div>
+<div class="modal" id="dogM" onclick="this.style.display='none'">
+  <div class="mcard" onclick="event.stopPropagation()">
+    <div style="display:inline-block; background:#fef3c7; color:#d97706; font-weight:700; font-size:0.85rem; padding:5px 14px; border-radius:20px; margin-bottom:8px;" id="dTit">🎉 따봉 3개 달성!</div>
+    <div style="position:relative; width:170px; height:170px; margin:0 auto;">
+      <svg width="170" height="170" viewBox="25 35 350 320" xmlns="http://w3.org" style="overflow:visible;">
+        <defs>
+          <path id="sparkle-star" d="M 0,-16 Q 2,-2 16,0 Q 2,2 0,16 Q -2,2 -16,0 Q -2,-2 0,-16 Z" />
+          <circle id="sparkle-dot" cx="0" cy="0" r="3.8" />
+        </defs>
+        <ellipse class="ground-shadow" cx="205" cy="323" rx="64" ry="11" fill="#4e2a14" />
+        <g class="chihuahua-jump" stroke="#4e2a14" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
+          <g class="tail">
+            <path d="M 255 256 C 280 250, 292 220, 280 200 C 274 217, 267 234, 250 244 Z" fill="#dca878" />
+            <path d="M 280 200 C 282 208, 280 218, 274 223 C 271 217, 275 208, 280 200 Z" fill="#fbf0e4" stroke="none" />
+            <path d="M 255 256 C 280 250, 292 220, 280 200 C 274 217, 267 234, 250 244" fill="none" />
+          </g>
+          <g>
+            <path d="M 218 268 L 220 303 C 220 311, 237 311, 237 302 L 236 268 Z" fill="#c89262" />
+            <path d="M 223 301 C 223 308, 234 308, 234 301 Z" fill="#fbf0e4" stroke="none" />
+            <path d="M 218 268 L 220 303 C 220 311, 237 311, 237 302 L 236 268" fill="none" />
+          </g>
+          <g>
+            <path d="M 164 268 L 163 305 C 163 313, 181 313, 181 304 L 181 268 Z" fill="#dca878" />
+            <path d="M 166 302 C 166 309, 178 309, 178 302 Z" fill="#fbf0e4" stroke="none" />
+            <path d="M 164 268 L 163 305 C 163 313, 181 313, 181 304 L 181 268" fill="none" />
+          </g>
+          <g>
+            <path d="M 240 264 L 241 308 C 241 316, 259 316, 259 307 L 259 264 Z" fill="#dca878" />
+            <path d="M 244 305 C 244 313, 256 313, 256 305 Z" fill="#fbf0e4" stroke="none" />
+            <path d="M 240 264 L 241 308 C 241 316, 259 316, 259 307 L 259 264" fill="none" />
+          </g>
+          <g>
+            <path d="M 192 270 L 192 311 C 192 319, 211 319, 211 310 L 211 270 Z" fill="#dca878" />
+            <path d="M 195 307 C 195 315, 208 315, 208 307 Z" fill="#fbf0e4" stroke="none" />
+            <path d="M 192 270 L 192 311 C 192 319, 211 319, 211 310 L 211 270" fill="none" />
+          </g>
+          <path d="M 155 225 C 147 250, 154 277, 176 280 L 244 280 C 266 277, 270 250, 254 227 Z" fill="#dca878" />
+          <path d="M 160 230 C 155 252, 162 272, 178 276 L 204 276 C 198 258, 198 242, 194 230 Z" fill="#fbf0e4" stroke="none" />
+          <path d="M 155 225 C 147 250, 154 277, 176 280 L 244 280 C 266 277, 270 250, 254 227" fill="none" />
+          <g transform="translate(-5, 9) rotate(-3.5 190 195)">
+            <g class="ear-left">
+              <path d="M 158 152 C 138 106, 102 88, 90 100 C 78 112, 94 164, 134 188 Z" fill="#dca878" />
+              <path d="M 151 158 C 134 120, 108 104, 99 112 C 91 120, 104 156, 132 178 Z" fill="#f7b2ad" stroke="none" />
+            </g>
+            <g class="ear-right">
+              <path d="M 222 152 C 242 106, 278 88, 290 100 C 302 112, 286 164, 246 188 Z" fill="#dca878" />
+              <path d="M 229 158 C 246 120, 272 104, 281 112 C 289 120, 276 156, 248 178 Z" fill="#f7b2ad" stroke="none" />
+            </g>
+            <path d="M 136 166 C 136 120, 244 120, 244 166 L 253 174 L 244 182 L 251 189 L 243 196 C 240 240, 140 240, 137 196 L 129 189 L 136 182 L 127 174 Z" fill="#dca878" />
+            <path d="M 190 192 C 183 192, 177 196, 174 201 C 164 203, 158 211, 161 220 C 164 228, 179 231, 190 231 C 201 231, 216 228, 219 220 C 222 211, 216 203, 206 201 C 203 196, 197 192, 190 192 Z" fill="#fbf0e4" stroke="none" />
+            <path d="M 136 166 C 136 120, 244 120, 244 166 L 253 174 L 244 182 L 251 189 L 243 196 C 240 240, 140 240, 137 196 L 129 189 L 136 182 L 127 174 Z" fill="none" />
+            <ellipse cx="166" cy="175" rx="8.5" ry="5" transform="rotate(-12 166 175)" fill="#fbf0e4" stroke="none" />
+            <ellipse cx="214" cy="175" rx="8.5" ry="5" transform="rotate(12 214 175)" fill="#fbf0e4" stroke="none" />
+            <circle cx="155" cy="197" r="11" fill="#4e2a14" stroke="none" />
+            <circle cx="151.5" cy="193.5" r="3.8" fill="#ffffff" stroke="none" />
+            <circle cx="225" cy="197" r="11" fill="#4e2a14" stroke="none" />
+            <circle cx="221.5" cy="193.5" r="3.8" fill="#ffffff" stroke="none" />
+            <path d="M 181 204 C 181 198, 199 198, 199 204 C 199 210, 192 213, 190 213 C 188 213, 181 210, 181 204 Z" fill="#4e2a14" stroke="none" />
+            <path d="M 175 217 C 178 224, 188 224, 190 217 C 192 224, 202 224, 205 217" fill="none" stroke="#4e2a14" stroke-width="5.5" />
+            <line x1="190" y1="211" x2="190" y2="218" stroke="#4e2a14" stroke-width="5" />
+          </g>
+        </g>
+        <g>
+          <g transform="translate(68, 155)"><use href="#sparkle-star" fill="#ffd166" class="sparkle-anim d1" /></g>
+          <g transform="translate(328, 138) scale(0.85)"><use href="#sparkle-star" fill="#ff8fab" class="sparkle-anim d2" /></g>
+          <g transform="translate(88, 92) scale(0.75)"><use href="#sparkle-star" fill="#72efdd" class="sparkle-anim d3" /></g>
+          <g transform="translate(310, 215) scale(0.9)"><use href="#sparkle-star" fill="#ffd166" class="sparkle-anim d4" /></g>
+          <g transform="translate(55, 225)"><use href="#sparkle-dot" fill="#ff8fab" class="sparkle-anim d5" /></g>
+          <g transform="translate(342, 182)"><use href="#sparkle-dot" fill="#72efdd" class="sparkle-anim d6" /></g>
+        </g>
+      </svg>
+    </div>
+    <h3 style="color:#4f46e5; margin:10px 0 4px; font-size:1.25rem; font-weight:800;">Super! Weiter so!</h3>
+    <p style="color:#64748b; margin:0 0 18px; font-weight:600; font-size:0.95rem;">"최고야! 이대로 계속 가자! 멍멍!"</p>
+    <button class="abtn" style="background:#f59e0b; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);" onclick="document.getElementById('dogM').style.display='none'">고마워 치와와야!</button>
+  </div>
+</div>
+<script>
+var set = [
+  {d:"Was machst du?", k:"너 뭐 해?"},
+  {d:"Ich mache Kaffee.", k:"나 커피 만들고 있어."},
+  {d:"Das macht wirklich Spaß!", k:"그거 진짜 재미있다!"}
+];
+var thumbs = 0, qL = [], qi = 0, done = false, sharedSR = null, ttsTimer = null, isListening = false;
+try { thumbs = parseInt(localStorage.getItem('g_th') || '0', 10); document.getElementById('tCnt').innerText = thumbs; } catch(e){}
+
+function stopMic() {
+  isListening = false;
+  if (sharedSR) {
+    sharedSR.onresult = null;
+    sharedSR.onerror = null;
+    try { sharedSR.abort(); } catch(e){}
+  }
+  var qMicBtn = document.getElementById('qMic');
+  if (qMicBtn) qMicBtn.innerText = '🎙️ 말하기로 풀기';
+  for (var i = 0; i < 3; i++) {
+    var fb = document.getElementById('fb' + i);
+    if (fb && fb.innerText.indexOf('듣는 중') !== -1) fb.innerText = '';
+  }
+}
+
+function stopTts() {
+  if (ttsTimer) { clearTimeout(ttsTimer); ttsTimer = null; }
+  if (window.speechSynthesis) speechSynthesis.cancel();
+}
+
+function tts(t) {
+  stopMic();
+  if (!window.speechSynthesis) return;
+  stopTts();
+  var count = 0;
+  function speakOnce() {
+    if (count >= 2) return;
+    var u = new SpeechSynthesisUtterance(t);
+    u.lang = 'de-DE';
+    u.rate = (count === 1) ? 0.68 : 1.0;
+    u.onend = function() {
+      count++;
+      if (count < 2) ttsTimer = setTimeout(speakOnce, 450);
+    };
+    speechSynthesis.speak(u);
+  }
+  speakOnce();
+}
+
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function makePair() {
+  var groups = [
+    function() {
+      var s = pick([{de:"Ich",ko:"나는",v:"trinke"},{de:"Wir",ko:"우리는",v:"trinken"},{de:"Sie",ko:"그녀는",v:"trinkt"},{de:"Er",ko:"그는",v:"trinkt"}]);
+      var o = pick([{de:"einen Kaffee",ko:"커피 한 잔을"},{de:"ein Glas Wasser",ko:"물 한 잔을"},{de:"einen Tee",ko:"차 한 잔을"},{de:"ein Bier",ko:"맥주 한 잔을"},{de:"Orangensaft",ko:"오렌지 주스를"}]);
+      return {d: s.de + " " + s.v + " " + o.de + ".", k: s.ko + " " + o.ko + " 마셔요."};
+    },
+    function() {
+      var s = pick([{de:"Ich",ko:"나는",v:"kaufe"},{de:"Wir",ko:"우리는",v:"kaufen"},{de:"Er",ko:"그는",v:"kauft"}]);
+      var o = pick([{de:"ein Brot",ko:"빵 하나를"},{de:"einen Apfel",ko:"사과 하나를"},{de:"eine Fahrkarte",ko:"승차권 한 장을"},{de:"ein Buch",ko:"책 한 권을"},{de:"Blumen",ko:"꽃을"},{de:"Schokolade",ko:"초콜릿을"}]);
+      return {d: s.de + " " + s.v + " " + o.de + ".", k: s.ko + " " + o.ko + " 사요."};
+    },
+    function() {
+      var p = pick([{de:"Wo ist",ko:"어디에 있나요?",ask:true},{de:"Ich suche",ko:"찾고 있어요.",ask:false},{de:"Wir gehen in",ko:"들어가요.",ask:false}]);
+      var pl = pick([
+        {nom:"der Bahnhof",acc:"den Bahnhof",ko:"기차역"},{nom:"die Toilette",acc:"die Toilette",ko:"화장실"},
+        {nom:"das Hotel",acc:"das Hotel",ko:"호텔"},{nom:"der Supermarkt",acc:"den Supermarkt",ko:"슈퍼마켓"},
+        {nom:"die Apotheke",acc:"die Apotheke",ko:"약국"},{nom:"das Restaurant",acc:"das Restaurant",ko:"식당"},
+        {nom:"die Bäckerei",acc:"die Bäckerei",ko:"빵집"}
+      ]);
+      if (p.ask) return {d: p.de + " " + pl.nom + "?", k: pl.ko + "이(가) " + p.ko};
+      return {d: p.de + " " + pl.acc + ".", k: pl.ko + "을(를) " + p.ko};
+    },
+    function() {
+      var s = pick([{de:"Das",ko:"그것은"},{de:"Es",ko:"그것은"},{de:"Das Wetter",ko:"날씨는"},{de:"Das Essen",ko:"음식은"},{de:"Der Kaffee",ko:"커피는"}]);
+      var adj = pick([{de:"wirklich gut!",ko:"정말 좋아요!"},{de:"sehr schön.",ko:"매우 아름다워요."},{de:"zu teuer.",ko:"너무 비싸요."},{de:"nicht schlecht.",ko:"나쁘지 않아요."},{de:"wirklich wichtig.",ko:"정말 중요해요."},{de:"sehr lecker!",ko:"아주 맛있어요!"}]);
+      return {d: s.de + " ist " + adj.de, k: s.ko + " " + adj.ko};
+    },
+    function() {
+      var s = pick([{de:"Ich fahre",ko:"나는"},{de:"Wir fahren",ko:"우리는"},{de:"Ich gehe",ko:"나는 걸어서"}]);
+      var dest = pick([{de:"nach Berlin",ko:"베를린으로"},{de:"nach München",ko:"뮌헨으로"},{de:"nach Hause",ko:"집으로"},{de:"ins Kino",ko:"영화관으로"},{de:"in die Stadt",ko:"시내로"},{de:"zur Arbeit",ko:"직장으로"},{de:"zum Flughafen",ko:"공항으로"}]);
+      return {d: s.de + " " + dest.de + ".", k: s.ko + " " + dest.ko + " 가요."};
+    },
+    function() {
+      return pick([
+        {de:"Kannst du mir helfen?",ko:"나 좀 도와줄 수 있어?"},{de:"Können Sie bitte langsamer sprechen?",ko:"조금만 천천히 말씀해 주시겠어요?"},
+        {de:"Was kostet das zusammen?",ko:"전부 다 해서 얼마인가요?"},{de:"Kann ich mit Karte zahlen?",ko:"카드로 계산할 수 있나요?"},
+        {de:"Hast du heute Abend Zeit?",ko:"오늘 저녁에 시간 있어?"},{de:"Ich habe leider keine Zeit.",ko:"아쉽게도 시간이 없어요."},
+        {de:"Ich bin wirklich müde.",ko:"나 진짜 피곤해."},{de:"Das macht wirklich Spaß!",ko:"그거 진짜 재미있다!"},
+        {de:"Ich verstehe das nicht.",ko:"그게 이해가 안 돼요."},{de:"Wie spät ist es jetzt?",ko:"지금 몇 시인가요?"},
+        {de:"Ich möchte gern bestellen.",ko:"주문하고 싶어요."},{de:"Die Rechnung, bitte.",ko:"계산서 주세요."}
+      ]);
+    }
+  ];
+  return pick(groups)();
+}
+function toggleKo(i) {
+  var el = document.getElementById('ko' + i);
+  var btn = document.getElementById('eye' + i);
+  var isHidden = el.classList.toggle('hide');
+  btn.innerText = isHidden ? '▾' : '▴';
+}
+
+function draw() {
+  stopTts();
+  stopMic();
+  var html = "";
+  for (var i = 0; i < set.length; i++) {
+    var x = set[i];
+    html += '<div class="card">' +
+      '<div class="row1"><span class="de">' + x.d + '</span><div style="display:flex;"><button class="ibtn" onclick="tts(set[' + i + '].d)">🔊</button><button class="ibtn" onclick="mic(' + i + ')">🎙️</button></div></div>' +
+      '<div class="row2"><span class="ko hide" id="ko' + i + '" onclick="toggleKo(' + i + ')">' + x.k + '</span><button class="minibtn" id="eye' + i + '" onclick="toggleKo(' + i + ')">▾</button></div>' +
+      '<div id="fb' + i + '" style="font-size:0.84rem; margin-top:6px; font-weight:600;"></div>' +
+    '</div>';
+  }
+  document.getElementById('v1').innerHTML = html;
+  if (document.getElementById('v2').style.display === 'block') initQ();
+}
+
+function getNew() {
+  var res = [], used = [];
+  while (res.length < 3) {
+    var item = makePair();
+    if (used.indexOf(item.d) === -1) { used.push(item.d); res.push(item); }
+  }
+  set = res; draw();
+}
+
+function mode(m) {
+  stopTts();
+  stopMic();
+  document.getElementById('t1').className = m === 1 ? 'tab on' : 'tab';
+  document.getElementById('t2').className = m === 2 ? 'tab on' : 'tab';
+  document.getElementById('v1').style.display = m === 1 ? 'block' : 'none';
+  document.getElementById('v2').style.display = m === 2 ? 'block' : 'none';
+  if (m === 2) initQ();
+}
+function norm(s) { return String(s).toLowerCase().replace(/[?!.,]/g,'').replace(/\s+/g,' ').trim().replace(/ä/g,'a').replace(/ö/g,'o').replace(/ü/g,'u').replace(/ß/g,'ss'); }
+function plus() { thumbs++; try{localStorage.setItem('g_th',thumbs);}catch(e){} document.getElementById('tCnt').innerText = thumbs; if(thumbs%3===0) setTimeout(dog,400); }
+
+function dog() {
+  stopTts();
+  stopMic();
+  document.getElementById('dTit').innerText = "🎉 현재 따봉 " + thumbs + "개!";
+  document.getElementById('dogM').style.display = 'flex';
+}
+
+function getSR() {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return null;
+  if (!sharedSR) { sharedSR = new SR(); sharedSR.lang = 'de-DE'; sharedSR.interimResults = false; }
+  return sharedSR;
+}
+
+function mic(i) {
+  stopTts();
+  stopMic();
+  var r = getSR(), fb = document.getElementById('fb'+i);
+  if (!r) { fb.innerText='⚠️ 크롬을 써주세요.'; return; }
+  isListening = true;
+  fb.style.color='#4f46e5'; fb.innerText='🎙️ 듣는 중... 다 말씀하시면 자동 확인됩니다.';
+  r.onresult = function(e) {
+    if (!isListening) return;
+    isListening = false;
+    var s = e.results.item(0).item(0).transcript;
+    if (norm(s) === norm(set[i].d)) { fb.style.color='#10b981'; fb.innerText='👍 정답! ("'+s+'") +1 따봉!'; plus(); }
+    else { fb.style.color='#d97706'; fb.innerText='💬 인식됨: "'+s+'" (다시 시도해보세요)'; }
+  };
+  r.onerror = function(e) {
+    if (!isListening) return;
+    isListening = false;
+    fb.style.color='#ef4444'; fb.innerText='⚠️ 오류: '+e.error;
+  };
+  setTimeout(function(){ if(isListening) { try { r.start(); } catch(e){} } }, 120);
+}
+
+function initQ() {
+  qL = set.slice().sort(function(){ return Math.random()-0.5; }); qi = 0;
+  document.getElementById('inp').style.display='block';
+  document.getElementById('qMic').style.display='block';
+  document.querySelector('.ubar').style.display='flex';
+  showQ();
+}
+
+function showQ() {
+  stopTts();
+  stopMic();
+  done = false;
+  document.getElementById('rMsg').innerHTML = '';
+  document.getElementById('cBtn').innerText = '정답 확인';
+  document.getElementById('cBtn').style.background = '#10b981';
+  var inp = document.getElementById('inp');
+  inp.value = '';
+  inp.disabled = false;
+  document.getElementById('qStep').innerText = '문제 ' + (qi + 1) + ' / 3';
+  document.getElementById('qTxt').innerText = '🇰🇷 "' + qL[qi].k + '"';
+}
+
+function ins(c) { var inp=document.getElementById('inp'); if(!inp.disabled){inp.value+=c; inp.focus();} }
+
+function micQ() {
+  if (done || qi === -1) return;
+  stopTts();
+  stopMic();
+  var r = getSR(); if (!r) return;
+  isListening = true;
+  var mBtn = document.getElementById('qMic');
+  var rMsg = document.getElementById('rMsg');
+  mBtn.innerText = '🎙️ 듣는 중... (말씀하세요)';
+  rMsg.style.color = '#4f46e5';
+  rMsg.innerText = '말씀이 끝나면 자동으로 입력됩니다.';
+
+  r.onresult = function(e) {
+    if (!isListening) return;
+    isListening = false;
+    var spoken = e.results.item(0).item(0).transcript;
+    document.getElementById('inp').value = spoken;
+    mBtn.innerText = '🎙️ 말하기로 풀기';
+    rMsg.innerText = '';
+    chk();
+  };
+  r.onerror = function() {
+    if (!isListening) return;
+    isListening = false;
+    mBtn.innerText = '🎙️ 말하기로 풀기';
+    rMsg.style.color = '#ef4444';
+    rMsg.innerText = '음성이 인식되지 않았습니다. 다시 눌러주세요.';
+  };
+  setTimeout(function(){ if(isListening) { try { r.start(); } catch(e){} } }, 120);
+}
+
+function retryQ() { showQ(); }
+
+function chk() {
+  stopMic();
+  if (qi === -1) { initQ(); return; }
+  if (done) {
+    qi++;
+    if (qi < 3) { showQ(); }
+    else {
+      document.getElementById('qTxt').innerText = '🎉 테스트 완료!';
+      document.getElementById('inp').style.display = 'none';
+      document.getElementById('qMic').style.display = 'none';
+      document.querySelector('.ubar').style.display = 'none';
+      document.getElementById('rMsg').style.color = '#18181b';
+      document.getElementById('rMsg').innerText = '현재 따봉: 👍 ' + thumbs + '개!';
+      document.getElementById('cBtn').innerText = '다시 풀기';
+      qi = -1;
+    }
+    return;
+  }
+
+  var inp = document.getElementById('inp');
+  if (!inp.value.trim()) return;
+  var m = document.getElementById('rMsg');
+
+  if (norm(inp.value) === norm(qL[qi].d)) {
+    m.style.color = '#10b981';
+    m.innerHTML = '⭕ 정답입니다! (' + qL[qi].d + ')';
+    plus();
+  } else {
+    m.style.color = '#ef4444';
+    m.innerHTML = '❌ 틀렸습니다! 정답: <b>' + qL[qi].d + '</b><br>' +
+      '<button onclick="retryQ()" style="margin-top:10px; padding:8px 16px; border:1px solid #e2e8f0; border-radius:10px; background:#f8fafc; font-weight:700; cursor:pointer; color:#18181b;">🔄 다시 시도하기</button>';
+  }
+
+  inp.disabled = true;
+  done = true;
+  document.getElementById('cBtn').innerText = qi < 2 ? '다음 문제 ▶' : '결과 보기';
+  document.getElementById('cBtn').style.background = '#4f46e5';
+}
+
+draw(); getNew();
+</script>
+</body>
+</html>
